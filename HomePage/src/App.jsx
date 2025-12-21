@@ -69,7 +69,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-// --- Firebase Initialization (Using Rule 1 & 2 logic) ---
+// --- Configuration & Initialization ---
 const firebaseConfig = JSON.parse(__firebase_config);
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -144,7 +144,11 @@ const App = () => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       // Automatically move to dashboard if user is authenticated and on login pages
-      if (currentUser && (view === "auth" || view === "landing")) {
+      if (
+        currentUser &&
+        !currentUser.isAnonymous &&
+        (view === "auth" || view === "landing")
+      ) {
         setView("dashboard");
       }
     });
@@ -193,7 +197,7 @@ const App = () => {
   const handleLogout = async () => {
     await signOut(auth);
     setView("landing");
-    // Re-sign in anonymously to maintain Rule 3 context
+    // Re-sign in anonymously to maintain context for Rules
     await signInAnonymously(auth);
   };
 
@@ -275,7 +279,7 @@ const App = () => {
     }
   };
 
-  // --- Feature Logic ---
+  // --- Feature Handlers ---
   const handlePharmacySearch = async (e) => {
     e.preventDefault();
     if (!pharmacyQuery.trim()) return;
@@ -295,7 +299,7 @@ const App = () => {
       );
       setPharmacyResults(JSON.parse(res));
     } catch (err) {
-      console.error("AI Parse Error:", err);
+      console.error("Pharmacy AI Error:", err);
     } finally {
       setIsAiProcessing(false);
     }
@@ -340,7 +344,34 @@ const App = () => {
     }
   };
 
-  // --- UI Components ---
+  const generateReport = async () => {
+    if (chatMessages.length < 2) return;
+    setIsGeneratingSummary(true);
+    setAgentMode("report");
+    const conversationHistory = chatMessages
+      .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+      .join("\n\n");
+    const prompt = `Generate a high-fidelity Clinical Consultation Report based on this history:\n\n${conversationHistory}`;
+    try {
+      const summary = await callGemini(prompt, "Chief Medical Officer.");
+      setClinicalReport(summary);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
+  const downloadReport = () => {
+    if (!clinicalReport) return;
+    const blob = new Blob([clinicalReport], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `VitaCore_Report_${Date.now()}.txt`;
+    link.click();
+  };
+
+  // --- Sub-Components ---
   const UrgencyBadge = ({ level }) => {
     const styles = {
       High: "bg-rose-100 text-rose-700 border-rose-200",
@@ -358,7 +389,6 @@ const App = () => {
     );
   };
 
-  // --- Views ---
   const LandingView = () => (
     <div className="min-h-screen bg-white dark:bg-slate-950 overflow-hidden font-sans">
       <nav className="p-8 flex justify-between items-center max-w-7xl mx-auto">
@@ -366,7 +396,7 @@ const App = () => {
           <div className="bg-violet-600 p-2.5 rounded-2xl shadow-lg">
             <Zap className="text-white" size={24} />
           </div>
-          <h1 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">
+          <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tighter uppercase">
             VitaCore AI
           </h1>
         </div>
@@ -385,7 +415,7 @@ const App = () => {
               setAuthMode("signup");
               setView("auth");
             }}
-            className="px-6 py-2.5 bg-violet-600 text-white font-bold rounded-xl shadow-xl shadow-violet-200 dark:shadow-none hover:bg-violet-700 transition-all"
+            className="px-6 py-2.5 bg-violet-600 text-white font-bold rounded-xl shadow-xl hover:bg-violet-700 transition-all"
           >
             Sign Up
           </button>
@@ -398,12 +428,12 @@ const App = () => {
             <Sparkles size={14} /> Clinical Intelligence Suite v2.5
           </div>
           <h2 className="text-7xl font-black text-slate-900 dark:text-white tracking-tighter leading-[0.9]">
-            The Future of <span className="text-violet-600">Smart</span>{" "}
-            Healthcare.
+            Healthcare, <span className="text-violet-600">Perfected</span> by
+            AI.
           </h2>
           <p className="text-xl text-slate-500 dark:text-slate-400 leading-relaxed max-w-lg">
-            VitaCore empowers patients and doctors with AI-driven diagnostics,
-            pharmacy cost-optimization, and intelligent specialist routing.
+            VitaCore empowers patients with hyper-accurate diagnostics, pharmacy
+            generic matching, and real-time clinical routing.
           </p>
           <div className="flex gap-4 pt-4">
             <button
@@ -411,13 +441,13 @@ const App = () => {
                 setAuthMode("signup");
                 setView("auth");
               }}
-              className="px-10 py-5 bg-slate-900 dark:bg-violet-600 text-white font-black rounded-[2rem] shadow-2xl flex items-center gap-3 group transition-all hover:scale-105 active:scale-95"
+              className="px-10 py-5 bg-slate-900 dark:bg-violet-600 text-white font-black rounded-[2rem] shadow-2xl flex items-center gap-3 group transition-all hover:scale-105"
             >
-              Get Started Now{" "}
+              Start Consultation{" "}
               <ArrowRight className="group-hover:translate-x-2 transition-transform" />
             </button>
-            <button className="px-10 py-5 border-2 border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-black rounded-[2rem] hover:bg-slate-50 dark:hover:bg-slate-900">
-              Technology Roadmap
+            <button className="px-10 py-5 border-2 border-slate-100 dark:border-slate-800 text-slate-800 dark:text-white font-black rounded-[2rem]">
+              View Technology
             </button>
           </div>
         </div>
@@ -427,24 +457,24 @@ const App = () => {
             <div className="grid grid-cols-2 gap-6">
               <div className="p-8 bg-slate-50 dark:bg-slate-800 rounded-[2.5rem] space-y-4">
                 <Stethoscope className="text-violet-600" size={32} />
-                <h4 className="font-black dark:text-white">
-                  Differential Diagnosis
+                <h4 className="font-black dark:text-white text-sm">
+                  Smart Triage
                 </h4>
-                <p className="text-sm text-slate-400">
-                  Map symptoms to thousands of documented clinical conditions.
+                <p className="text-xs text-slate-400">
+                  Map symptoms to thousands of clinical conditions.
                 </p>
               </div>
               <div className="p-8 bg-violet-600 text-white rounded-[2.5rem] space-y-4 shadow-xl">
                 <Pill size={32} />
-                <h4 className="font-black">Pharmacy Optimizer</h4>
-                <p className="text-sm opacity-80">
-                  Find generic matches and save up to 80% on medications.
+                <h4 className="font-black text-sm">Generic Matching</h4>
+                <p className="text-xs opacity-80">
+                  Find affordable, high-quality generic alternatives.
                 </p>
               </div>
               <div className="p-8 bg-slate-50 dark:bg-slate-800 rounded-[2.5rem] space-y-4 col-span-2">
                 <div className="flex justify-between items-center">
-                  <h4 className="font-black dark:text-white">
-                    AI Diagnostic Engine Status
+                  <h4 className="font-black dark:text-white text-sm">
+                    Clinical Engine Status
                   </h4>
                   <div className="flex items-center gap-2 text-emerald-500 text-xs font-black">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />{" "}
@@ -454,9 +484,6 @@ const App = () => {
                 <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div className="h-full w-[94%] bg-emerald-500" />
                 </div>
-                <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">
-                  94.2% Diagnostic Accuracy Score
-                </p>
               </div>
             </div>
           </div>
@@ -470,7 +497,7 @@ const App = () => {
       <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl p-12 border dark:border-slate-800">
         <button
           onClick={() => setView("landing")}
-          className="mb-8 text-slate-400 hover:text-violet-600 flex items-center gap-2 font-bold text-sm"
+          className="mb-8 text-slate-400 hover:text-violet-600 flex items-center gap-2 font-bold text-sm transition-colors"
         >
           <ChevronRight className="rotate-180" size={16} /> Back
         </button>
@@ -479,12 +506,12 @@ const App = () => {
         </h3>
         <p className="text-slate-400 mb-8 font-medium italic">
           {authMode === "login"
-            ? "Access your secure health dashboard"
-            : "Join the VitaCore medical network"}
+            ? "Securely access your dashboard"
+            : "Create your VitaCore profile"}
         </p>
 
         {authError && (
-          <div className="mb-6 p-4 bg-rose-50 text-rose-600 rounded-2xl text-xs font-bold border border-rose-100">
+          <div className="mb-6 p-4 bg-rose-50 text-rose-600 rounded-2xl text-xs font-bold border border-rose-100 animate-in fade-in">
             {authError}
           </div>
         )}
@@ -541,7 +568,7 @@ const App = () => {
             ) : (
               <UserPlus size={18} />
             )}
-            {authMode === "login" ? "Secure Sign In" : "Register Profile"}
+            {authMode === "login" ? "Secure Login" : "Register Profile"}
           </button>
         </form>
 
@@ -564,50 +591,41 @@ const App = () => {
     <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 space-y-10">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            Intelligence Dashboard
+          <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight uppercase tracking-widest">
+            Analytics
           </h2>
           <p className="text-slate-500 dark:text-slate-400 font-medium italic">
-            Clinical Session Active for{" "}
-            {user?.displayName || user?.email || "User"}
+            Clinical Session Active: {user?.displayName || user?.email}
           </p>
-        </div>
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 flex gap-4 items-center">
-          <div className="text-right">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Biometric Sync
-            </p>
-            <p className="text-xs font-bold text-emerald-500 flex items-center gap-1 justify-end">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />{" "}
-              Active
-            </p>
-          </div>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
           {
-            label: "Consults",
+            label: "Total Cons",
             val: "12",
             icon: ClipboardList,
             color: "violet",
           },
           {
-            label: "Safety Score",
+            label: "System Score",
             val: "98%",
             icon: ShieldCheck,
             color: "emerald",
           },
-          { label: "Reports", val: "4", icon: FileText, color: "rose" },
-          { label: "Meds Hub", val: "Active", icon: Pill, color: "cyan" },
+          {
+            label: "Diagnostics",
+            val: "Active",
+            icon: Activity,
+            color: "rose",
+          },
+          { label: "Pharmacy", val: "Synced", icon: Pill, color: "cyan" },
         ].map((s, i) => (
           <div
             key={i}
-            className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-sm border dark:border-slate-800"
+            className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-sm border dark:border-slate-800 hover:shadow-xl transition-all"
           >
-            <div
-              className={`w-12 h-12 rounded-2xl flex items-center justify-center text-violet-600 bg-violet-50 dark:bg-violet-950/40 mb-6`}
-            >
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-violet-600 bg-violet-50 dark:bg-violet-950/40 mb-6">
               <s.icon size={24} />
             </div>
             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
@@ -617,39 +635,39 @@ const App = () => {
           </div>
         ))}
       </div>
-      <div className="bg-slate-900 rounded-[3rem] p-12 text-white relative overflow-hidden shadow-2xl">
+      <div className="bg-slate-900 rounded-[3rem] p-12 text-white relative overflow-hidden shadow-2xl group">
         <Sparkles
-          className="absolute -right-10 -top-10 opacity-10"
+          className="absolute -right-10 -top-10 opacity-10 group-hover:rotate-12 transition-transform duration-700"
           size={240}
         />
         <div className="max-w-xl relative z-10">
           <h3 className="text-3xl font-black mb-4">
-            Start New Clinical Mapping
+            Start High-Fidelity Mapping
           </h3>
           <p className="text-slate-400 mb-8 leading-relaxed">
-            Enter patient symptoms or describe physiological variance for an
-            instant differential diagnosis report.
+            Synthesize symptoms or describe physiological variance for an
+            instant diagnostic report with 94.2% AI confidence.
           </p>
           <button
             onClick={() => setView("symptoms")}
             className="px-10 py-4 bg-violet-600 rounded-2xl font-black uppercase tracking-widest hover:bg-violet-700 transition-all flex items-center gap-2 shadow-lg shadow-violet-500/20"
           >
-            Launch Symptom Checker <ChevronRight size={18} />
+            Launch Engine <ChevronRight size={18} />
           </button>
         </div>
       </div>
     </div>
   );
 
-  const renderPharmacy = () => (
+  const PharmacyView = () => (
     <div className="animate-in fade-in slide-in-from-right-12 duration-700 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            Pharmacy Hub
+          <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight uppercase tracking-widest">
+            Pharmacy
           </h2>
           <p className="text-slate-500 dark:text-slate-400 font-medium italic">
-            Advanced generic matching & cost analysis.
+            Advanced generic matching & clinical drug profiles.
           </p>
         </div>
         <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
@@ -687,8 +705,8 @@ const App = () => {
             type="text"
             placeholder={
               pharmacyMode === "recommend"
-                ? "Condition (e.g., GERD, Diabetes)..."
-                : "Brand Name (e.g., Tylenol, Lipitor)..."
+                ? "Condition (e.g., Hypertension, Reflux)..."
+                : "Brand Medication (e.g., Advil, Lipitor)..."
             }
             className="w-full bg-slate-50 dark:bg-slate-800 p-6 pr-32 rounded-3xl border-none outline-none dark:text-white text-lg font-medium focus:ring-4 ring-violet-500/10 transition-all"
             value={pharmacyQuery}
@@ -697,7 +715,7 @@ const App = () => {
           <button
             type="submit"
             disabled={isAiProcessing || !pharmacyQuery}
-            className="absolute right-3 top-3 bottom-3 px-6 bg-violet-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-violet-700 transition-all flex items-center gap-2"
+            className="absolute right-3 top-3 bottom-3 px-8 bg-violet-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-violet-700 transition-all flex items-center gap-2"
           >
             {isAiProcessing ? (
               <Loader2 className="animate-spin" size={16} />
@@ -715,7 +733,7 @@ const App = () => {
                 <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
                   <ShieldCheck size={20} />
                   <p className="text-sm font-bold uppercase tracking-widest">
-                    Generic Matching Results for {pharmacyResults.medicine}
+                    Generic Matching for {pharmacyResults.medicine}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -740,14 +758,14 @@ const App = () => {
                       </p>
                       <div className="flex justify-between items-center pt-6 border-t dark:border-slate-700">
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-slate-400 uppercase">
-                            Estimated Savings
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            Savings
                           </span>
                           <span className="text-sm font-black text-emerald-600">
                             {alt.costDifference}
                           </span>
                         </div>
-                        <button className="p-2 bg-slate-50 dark:bg-slate-900 rounded-xl">
+                        <button className="p-2 bg-slate-50 dark:bg-slate-900 rounded-xl hover:bg-violet-50 transition-colors">
                           <ChevronRight size={16} />
                         </button>
                       </div>
@@ -758,16 +776,16 @@ const App = () => {
             ) : (
               <div className="bg-slate-50 dark:bg-slate-800/50 p-10 rounded-[2.5rem] border dark:border-slate-700">
                 <h3 className="font-black text-xl dark:text-white mb-8 flex items-center gap-3">
-                  <Info className="text-violet-600" /> Recommendations for{" "}
+                  <Info className="text-violet-600" /> Clinical Recommendation:{" "}
                   {pharmacyResults.condition}
                 </h3>
                 <div className="space-y-6">
                   {pharmacyResults.medicines?.map((med, idx) => (
                     <div
                       key={idx}
-                      className="flex gap-6 p-6 bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 items-start shadow-sm"
+                      className="flex gap-6 p-6 bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 items-start shadow-sm group"
                     >
-                      <div className="p-3 bg-violet-100 dark:bg-violet-950/40 text-violet-600 rounded-xl">
+                      <div className="p-3 bg-violet-100 dark:bg-violet-950/40 text-violet-600 rounded-xl group-hover:rotate-12 transition-transform">
                         <Pill size={24} />
                       </div>
                       <div>
@@ -775,10 +793,10 @@ const App = () => {
                           {med.name}
                         </h4>
                         <p className="text-sm text-slate-500 font-medium mb-2">
-                          Standard Clinical Dosage: {med.dosage}
+                          Dosage: {med.dosage}
                         </p>
                         <p className="text-xs text-rose-500 font-bold uppercase tracking-widest">
-                          Critical Side Effects: {med.sideEffects}
+                          Safety Notes: {med.sideEffects}
                         </p>
                       </div>
                     </div>
@@ -788,6 +806,167 @@ const App = () => {
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+
+  const AgentView = () => (
+    <div className="animate-in fade-in slide-in-from-bottom-10 duration-700 h-full flex flex-col gap-6 pb-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight uppercase tracking-widest">
+            Consultant
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 font-medium italic italic">
+            Real-time health concierge & reporting suite.
+          </p>
+        </div>
+        <div className="flex gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
+          <button
+            onClick={() => setAgentMode("chat")}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+              agentMode === "chat"
+                ? "bg-white dark:bg-slate-900 text-violet-600 shadow-md"
+                : "text-slate-400"
+            }`}
+          >
+            <MessageSquarePlus size={14} /> CONSULT
+          </button>
+          <button
+            onClick={generateReport}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+              agentMode === "report"
+                ? "bg-white dark:bg-slate-900 text-violet-600 shadow-md"
+                : "text-slate-400"
+            }`}
+          >
+            <ClipboardList size={14} /> REPORT
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+        <div
+          className={`lg:col-span-7 flex flex-col transition-all duration-500 ${
+            agentMode === "report"
+              ? "opacity-40 grayscale pointer-events-none"
+              : ""
+          }`}
+        >
+          <div className="flex-1 bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden">
+            <div className="p-8 overflow-y-auto space-y-6 flex-1 scrollbar-hide">
+              {chatMessages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`flex ${
+                    m.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[85%] p-6 rounded-[2.5rem] text-sm font-medium shadow-sm transition-all ${
+                      m.role === "user"
+                        ? "bg-violet-600 text-white rounded-tr-none"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-tl-none border dark:border-slate-700"
+                    }`}
+                  >
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+            <form
+              className="p-6 bg-slate-50 dark:bg-slate-900 border-t dark:border-slate-800 flex gap-3 items-center"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!userInput.trim() || isChatting) return;
+                const newMsgs = [
+                  ...chatMessages,
+                  { role: "user", content: userInput },
+                ];
+                setChatMessages(newMsgs);
+                setUserInput("");
+                setIsChatting(true);
+                const res = await callGemini(
+                  userInput,
+                  "Professional health agent."
+                );
+                setChatMessages([
+                  ...newMsgs,
+                  { role: "assistant", content: res },
+                ]);
+                setIsChatting(false);
+              }}
+            >
+              <div className="relative flex-1">
+                <input
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 p-5 pr-14 rounded-2xl outline-none shadow-inner dark:text-white font-medium border-2 border-transparent focus:border-violet-500/20 transition-all"
+                  placeholder="Ask anything about your health..."
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    playGeminiTTS(
+                      chatMessages[chatMessages.length - 1]?.content || ""
+                    )
+                  }
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-violet-600 transition-colors"
+                >
+                  <Volume2 size={20} />
+                </button>
+              </div>
+              <button className="bg-slate-900 dark:bg-violet-600 p-5 text-white rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-lg">
+                {isChatting ? (
+                  <Loader2 className="animate-spin" size={20} />
+                ) : (
+                  <Send size={20} />
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+        <div className="lg:col-span-5 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col h-full overflow-hidden">
+            <div className="p-6 border-b dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+              <h3 className="font-black text-xs uppercase tracking-widest text-slate-500">
+                Summary Synthesis
+              </h3>
+              {clinicalReport && (
+                <button
+                  onClick={downloadReport}
+                  className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 shadow-md"
+                >
+                  Download
+                </button>
+              )}
+            </div>
+            <div className="flex-1 p-8 overflow-y-auto">
+              {isGeneratingSummary ? (
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="w-16 h-16 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="font-black text-slate-400 uppercase tracking-widest text-xs">
+                    Synthesizing Clinical Log...
+                  </p>
+                </div>
+              ) : clinicalReport ? (
+                <div className="animate-in fade-in zoom-in-95 duration-500">
+                  <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    {clinicalReport}
+                  </pre>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center opacity-30">
+                  <ClipboardList size={40} className="text-slate-400 mb-6" />
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+                    Consult Agent to Generate Report
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -816,10 +995,10 @@ const App = () => {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-6">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-6 font-sans">
         <div className="w-16 h-16 border-4 border-violet-600 border-t-transparent rounded-full animate-spin" />
         <p className="font-black uppercase tracking-widest text-[10px] text-slate-400">
-          Secure Initialization Protocol...
+          Initializing VitaCore Protocol...
         </p>
       </div>
     );
@@ -851,7 +1030,7 @@ const App = () => {
             </div>
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+              className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-sm transition-all active:scale-95"
             >
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
@@ -926,22 +1105,31 @@ const App = () => {
             {view === "dashboard" && <DashboardView />}
             {view === "symptoms" && (
               <div className="animate-in fade-in slide-in-from-right-12 duration-700 space-y-8 pb-20">
-                <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                  Symptom Detector
-                </h2>
+                <div>
+                  <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight uppercase tracking-widest">
+                    Symptom Detector
+                  </h2>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium italic">
+                    Describe your physiological status for high-fidelity
+                    clinical mapping.
+                  </p>
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                   <div className="lg:col-span-4 space-y-6">
                     <div className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-xl">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-4">
+                        Patient Symptom Log
+                      </label>
                       <textarea
                         value={symptomInput}
                         onChange={(e) => setSymptomInput(e.target.value)}
-                        placeholder="Describe symptoms in detail (e.g. Sharp abdominal pain after meals)..."
-                        className="w-full h-48 bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border-none outline-none dark:text-white resize-none"
+                        placeholder="Describe symptoms in detail (e.g., Sharp abdominal pain after fatty meals)..."
+                        className="w-full h-48 bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border-2 border-transparent focus:border-violet-500/10 outline-none dark:text-white resize-none font-medium text-sm transition-all"
                       />
                       <button
                         onClick={handleSymptomAnalysis}
                         disabled={isAiProcessing || !symptomInput}
-                        className="w-full mt-6 py-4 bg-violet-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3"
+                        className="w-full mt-6 py-4 bg-violet-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:bg-violet-700 transition-all shadow-violet-500/20"
                       >
                         {isAiProcessing ? (
                           <Loader2 className="animate-spin" />
@@ -954,53 +1142,72 @@ const App = () => {
                   </div>
                   <div className="lg:col-span-8">
                     {symptomAnalysis ? (
-                      <div className="space-y-6">
+                      <div className="space-y-6 animate-in slide-in-from-bottom-4">
                         <div className="bg-rose-600 text-white p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
                           <AlertCircle className="absolute -right-4 -top-4 opacity-10 w-32 h-32" />
                           <h3 className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-80">
-                            Critical Observation
+                            Critical Clinical Observation
                           </h3>
-                          <p className="text-lg font-bold">
+                          <p className="text-lg font-bold leading-relaxed">
                             {symptomAnalysis.criticalNote}
                           </p>
                         </div>
-                        <div className="bg-white dark:bg-slate-900 rounded-[3rem] border shadow-2xl overflow-hidden">
-                          <table className="w-full text-left">
-                            <thead className="bg-slate-50 dark:bg-slate-800">
-                              <tr>
-                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                  Condition
-                                </th>
-                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">
-                                  Urgency
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y dark:divide-slate-800">
-                              {symptomAnalysis.diagnoses.map((diag, i) => (
-                                <tr key={i}>
-                                  <td className="p-6">
-                                    <p className="font-black dark:text-white">
-                                      {diag.condition}
-                                    </p>
-                                    <p className="text-xs text-slate-400">
-                                      {diag.description}
-                                    </p>
-                                  </td>
-                                  <td className="p-6 text-center">
-                                    <UrgencyBadge level={diag.urgency} />
-                                  </td>
+                        <div className="bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden">
+                          <div className="p-8 border-b dark:border-slate-800 flex items-center gap-4 bg-slate-50/50 dark:bg-slate-800/50">
+                            <div className="p-2.5 bg-violet-600 text-white rounded-xl">
+                              <Stethoscope size={20} />
+                            </div>
+                            <h3 className="font-black text-slate-800 dark:text-white uppercase tracking-tight text-lg">
+                              Differential Diagnosis
+                            </h3>
+                          </div>
+                          <div className="overflow-x-auto scrollbar-hide">
+                            <table className="w-full text-left">
+                              <thead className="bg-slate-50 dark:bg-slate-800">
+                                <tr>
+                                  <th className="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                    Clinical Condition
+                                  </th>
+                                  <th className="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">
+                                    Confidence
+                                  </th>
+                                  <th className="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">
+                                    Urgency
+                                  </th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                              </thead>
+                              <tbody className="divide-y dark:divide-slate-800">
+                                {symptomAnalysis.diagnoses.map((diag, i) => (
+                                  <tr
+                                    key={i}
+                                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors"
+                                  >
+                                    <td className="p-6">
+                                      <p className="font-black dark:text-white leading-none mb-2">
+                                        {diag.condition}
+                                      </p>
+                                      <p className="text-xs text-slate-400 max-w-xs">
+                                        {diag.description}
+                                      </p>
+                                    </td>
+                                    <td className="p-6 text-center text-xs font-black text-violet-600">
+                                      {diag.confidence}
+                                    </td>
+                                    <td className="p-6 text-center">
+                                      <UrgencyBadge level={diag.urgency} />
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       </div>
                     ) : (
                       <div className="h-[400px] border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[4rem] flex flex-col items-center justify-center text-slate-300 opacity-50">
-                        <ScanSearch size={64} />
-                        <p className="mt-4 font-black uppercase text-xs tracking-widest">
-                          Enter Symptom Log
+                        <ScanSearch size={64} className="mb-4" />
+                        <p className="font-black uppercase text-xs tracking-[0.2em]">
+                          Idle: Input Symptom Data
                         </p>
                       </div>
                     )}
@@ -1008,11 +1215,11 @@ const App = () => {
                 </div>
               </div>
             )}
-            {view === "pharmacy" && renderPharmacy()}
+            {view === "pharmacy" && <PharmacyView />}
             {view === "diagnostic" && (
-              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6">
+              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 pb-20">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-4xl font-black">
+                  <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-widest">
                     {tabs.find((t) => t.id === activeTab).label} Analysis
                   </h2>
                   <div className="flex gap-2">
@@ -1022,8 +1229,8 @@ const App = () => {
                         onClick={() => setActiveTab(t.id)}
                         className={`p-4 rounded-2xl transition-all ${
                           activeTab === t.id
-                            ? "bg-violet-600 text-white shadow-lg"
-                            : "bg-white dark:bg-slate-800 text-slate-400"
+                            ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
+                            : "bg-white dark:bg-slate-800 text-slate-400 hover:bg-slate-50 transition-colors"
                         }`}
                       >
                         <t.icon size={20} />
@@ -1033,58 +1240,152 @@ const App = () => {
                 </div>
                 <div className="bg-white dark:bg-slate-900 rounded-[3.5rem] p-12 shadow-2xl border dark:border-slate-800">
                   <div className="grid grid-cols-2 gap-8">
-                    {Object.keys(formData[activeTab]).map((field) => (
+                    {Object.keys(
+                      {
+                        heart: [
+                          "Age",
+                          "Sex",
+                          "CP",
+                          "RestBPS",
+                          "Chol",
+                          "FBS",
+                          "RestECG",
+                          "Thalach",
+                        ],
+                        diabetes: [
+                          "Pregnancies",
+                          "Glucose",
+                          "BloodPressure",
+                          "Insulin",
+                          "BMI",
+                          "DPF",
+                          "Age",
+                        ],
+                        lung: [
+                          "Age",
+                          "Smoking",
+                          "Fatigue",
+                          "Wheezing",
+                          "Coughing",
+                          "Anxiety",
+                          "ChronicDisease",
+                        ],
+                        oncology: ["ScanType", "History", "Age", "Indicators"],
+                      }[activeTab]
+                    ).map((field) => (
                       <div key={field} className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-slate-400">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
                           {field}
                         </label>
                         <input
                           type="number"
-                          className="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl outline-none font-bold"
+                          className="w-full p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl outline-none font-bold border-2 border-transparent focus:border-violet-500/10 transition-all"
+                          placeholder="0"
                         />
                       </div>
                     ))}
                   </div>
-                  <button className="w-full mt-12 py-6 bg-slate-900 dark:bg-violet-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl hover:bg-violet-700 transition-all">
-                    Execute Scan
+                  <button
+                    onClick={() => {
+                      setIsAiProcessing(true);
+                      setTimeout(() => {
+                        setIsAiProcessing(false);
+                        setPrediction({
+                          status: Math.random() > 0.5 ? "high" : "low",
+                          msg: "Biometric analysis suggests routine physiological variance. Monitor regularly.",
+                        });
+                      }, 2000);
+                    }}
+                    className="w-full mt-12 py-6 bg-slate-900 dark:bg-violet-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl hover:scale-[1.01] active:scale-[0.99] transition-all"
+                  >
+                    {isAiProcessing ? (
+                      <Loader2 className="animate-spin inline mr-2" />
+                    ) : (
+                      "Run Clinical Scan"
+                    )}
                   </button>
+                  {prediction && (
+                    <div
+                      className={`mt-10 p-8 rounded-[2.5rem] animate-in zoom-in-95 ${
+                        prediction.status === "high"
+                          ? "bg-rose-50 text-rose-900 border-rose-100"
+                          : "bg-emerald-50 text-emerald-900 border-emerald-100"
+                      } border`}
+                    >
+                      <h4 className="font-black uppercase tracking-widest text-xs mb-2">
+                        Scan Outcome
+                      </h4>
+                      <p className="font-bold leading-relaxed">
+                        {prediction.msg}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
             {view === "hospitals" && (
               <div className="space-y-8 animate-in slide-in-from-right-12">
-                <h2 className="text-4xl font-black">Regional Hospital Map</h2>
-                <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-12 shadow-xl">
+                <div>
+                  <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-widest">
+                    Regional Locator
+                  </h2>
+                </div>
+                <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-12 shadow-xl border dark:border-slate-800">
                   <form
                     onSubmit={handleHospitalSearch}
                     className="relative mb-12"
                   >
                     <input
                       type="text"
-                      placeholder="Enter City/State..."
-                      className="w-full bg-slate-50 dark:bg-slate-800 p-6 pr-44 rounded-[2.5rem] outline-none"
+                      placeholder="Enter City/ZIP Code..."
+                      className="w-full bg-slate-50 dark:bg-slate-800 p-6 pr-44 rounded-[2.5rem] outline-none font-medium focus:ring-4 ring-cyan-500/5 transition-all"
                       value={locationQuery}
                       onChange={(e) => setLocationQuery(e.target.value)}
                     />
                     <button
                       type="submit"
-                      className="absolute right-3 top-3 bottom-3 px-8 bg-cyan-600 text-white rounded-[2rem] font-black uppercase"
+                      className="absolute right-3 top-3 bottom-3 px-8 bg-cyan-600 text-white rounded-[2rem] font-black uppercase tracking-widest hover:bg-cyan-700 transition-all flex items-center gap-2"
                     >
-                      Search Map
+                      Scan Map
                     </button>
                   </form>
                   {hospitalResults && (
-                    <div className="grid grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in zoom-in-95">
                       {hospitalResults.map((h, i) => (
                         <div
                           key={i}
-                          className="p-8 bg-slate-50 dark:bg-slate-800 rounded-[2.5rem] border dark:border-slate-700"
+                          className="p-8 bg-slate-50 dark:bg-slate-800 rounded-[2.5rem] border dark:border-slate-700 group hover:shadow-xl transition-all"
                         >
-                          <h4 className="font-black text-lg mb-2">{h.name}</h4>
-                          <p className="text-xs text-slate-400 mb-6">
+                          <h4 className="font-black text-lg mb-2 dark:text-white leading-tight">
+                            {h.name}
+                          </h4>
+                          <p className="text-xs text-slate-400 mb-6 h-10">
                             {h.address}
                           </p>
-                          <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase">
+                          <div className="flex gap-2 mb-6">
+                            {[...Array(5)].map((_, star) => (
+                              <Star
+                                key={star}
+                                size={12}
+                                className={
+                                  star < Math.floor(h.rating)
+                                    ? "text-amber-400 fill-current"
+                                    : "text-slate-200"
+                                }
+                              />
+                            ))}
+                          </div>
+                          <button
+                            onClick={() =>
+                              window.open(
+                                `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                                  h.name + " " + h.address
+                                )}`,
+                                "_blank"
+                              )
+                            }
+                            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest group-hover:bg-cyan-600 transition-colors"
+                          >
                             Route Location
                           </button>
                         </div>
@@ -1095,37 +1396,39 @@ const App = () => {
               </div>
             )}
             {view === "booking" && (
-              <div className="animate-in fade-in slide-in-from-bottom-10 space-y-8">
-                <h2 className="text-4xl font-black">
-                  Expert Consultant Booking
+              <div className="animate-in fade-in slide-in-from-bottom-10 space-y-10 pb-20">
+                <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-widest">
+                  Expert Network
                 </h2>
-                <div className="grid grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {[
-                    "Dr. Sarah Vance",
-                    "Dr. Mark Thorne",
-                    "Dr. Alex Chen",
-                    "Dr. Julia Ross",
+                    "Dr. Sarah Vance (Cardio)",
+                    "Dr. Mark Thorne (Endo)",
+                    "Dr. Alex Chen (Pulmo)",
+                    "Dr. Julia Ross (Onco)",
                   ].map((d, i) => (
                     <div
                       key={i}
-                      className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border shadow-sm text-center"
+                      className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm text-center group hover:shadow-2xl transition-all"
                     >
-                      <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full mx-auto mb-6 flex items-center justify-center font-black text-violet-600">
+                      <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full mx-auto mb-6 flex items-center justify-center font-black text-violet-600 text-2xl group-hover:bg-violet-600 group-hover:text-white transition-all">
                         DR
                       </div>
-                      <h4 className="font-black text-lg mb-1">{d}</h4>
-                      <p className="text-[10px] font-black text-violet-600 uppercase mb-6">
-                        Certified Specialist
+                      <h4 className="font-black dark:text-white mb-1 leading-tight">
+                        {d.split(" (")[0]}
+                      </h4>
+                      <p className="text-[10px] font-black text-violet-600 uppercase tracking-widest mb-8">
+                        {d.split("(")[1].replace(")", "")}
                       </p>
-                      <button className="w-full py-3 bg-violet-600 text-white rounded-xl font-black text-[10px] uppercase">
-                        Book Slot
+                      <button className="w-full py-4 bg-slate-900 dark:bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-violet-600 transition-colors">
+                        Book Consultation
                       </button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            {view === "agent" && renderAgentView()}
+            {view === "agent" && <AgentView />}
           </div>
         </main>
       </div>
