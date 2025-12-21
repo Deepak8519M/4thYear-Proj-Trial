@@ -15,10 +15,13 @@ import {
   ShieldCheck,
   MapPin,
   Star,
+  Mail,
+  Loader2,
+  Trash2,
 } from "lucide-react";
 
-// --- Mock Data ---
-const INITIAL_DOCTORS = [
+// --- Default Mock Data ---
+const DEFAULT_DOCTORS = [
   {
     id: 1,
     name: "Dr. Sarah Mitchell",
@@ -51,20 +54,101 @@ const TIME_SLOTS = [
 ];
 
 export default function App() {
-  const [view, setView] = useState("patient"); // 'admin' or 'patient'
-  const [doctors, setDoctors] = useState(INITIAL_DOCTORS);
-  const [appointments, setAppointments] = useState([]);
-  const [bookingStep, setBookingStep] = useState(0); // 0: Browse, 1: Date, 2: Time, 3: Payment, 4: Success
+  const [view, setView] = useState("patient");
+
+  // --- Persistence Logic: Initialize from LocalStorage ---
+  const [doctors, setDoctors] = useState(() => {
+    const saved = localStorage.getItem("hs_doctors");
+    return saved ? JSON.parse(saved) : DEFAULT_DOCTORS;
+  });
+
+  const [appointments, setAppointments] = useState(() => {
+    const saved = localStorage.getItem("hs_appointments");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [bookingStep, setBookingStep] = useState(0);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailDraft, setEmailDraft] = useState("");
+
   const [bookingDetails, setBookingDetails] = useState({
     date: "",
     time: "",
     patientName: "",
+    patientEmail: "",
   });
+
+  // --- Sync State to LocalStorage whenever they change ---
+  useEffect(() => {
+    localStorage.setItem("hs_doctors", JSON.stringify(doctors));
+  }, [doctors]);
+
+  useEffect(() => {
+    localStorage.setItem("hs_appointments", JSON.stringify(appointments));
+  }, [appointments]);
+
+  // --- Gemini API Email Simulation ---
+  const generateConfirmationEmail = async (details, doctor) => {
+    setIsSendingEmail(true);
+    const apiKey = "";
+    const prompt = `Generate a professional and friendly appointment confirmation email for a patient. 
+    Patient Name: ${details.patientName}
+    Doctor: ${doctor.name} (${doctor.specialty})
+    Date: ${details.date}
+    Time: ${details.time}
+    Location: HealthSync Medical Center, Suite 402.
+    Mention that their payment of $${
+      Number(doctor.fee) + 5
+    } has been processed. 
+    The tone should be reassuring and clear. Keep it concise.`;
+
+    const fetchWithRetry = async (retries = 0) => {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+            }),
+          }
+        );
+        const data = await response.json();
+        return (
+          data.candidates?.[0]?.content?.parts?.[0]?.text ||
+          "Email sent successfully."
+        );
+      } catch (error) {
+        if (retries < 5) {
+          const delay = Math.pow(2, retries) * 1000;
+          await new Promise((res) => setTimeout(res, delay));
+          return fetchWithRetry(retries + 1);
+        }
+        throw error;
+      }
+    };
+
+    try {
+      const emailText = await fetchWithRetry();
+      setEmailDraft(emailText);
+    } catch (err) {
+      setEmailDraft(
+        "Confirmed! Your appointment is scheduled. A confirmation has been sent to your Gmail."
+      );
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
 
   // --- Admin Logic ---
   const addDoctor = (newDoc) => {
     setDoctors([...doctors, { ...newDoc, id: Date.now(), rating: 5.0 }]);
+  };
+
+  const deleteDoctor = (id) => {
+    setDoctors(doctors.filter((d) => d.id !== id));
   };
 
   // --- Booking Flow Logic ---
@@ -76,7 +160,7 @@ export default function App() {
   const nextStep = () => setBookingStep((prev) => prev + 1);
   const prevStep = () => setBookingStep((prev) => prev - 1);
 
-  const confirmBooking = () => {
+  const confirmBooking = async () => {
     const newAppointment = {
       id: Date.now(),
       doctor: selectedDoctor,
@@ -85,17 +169,23 @@ export default function App() {
     };
     setAppointments([...appointments, newAppointment]);
     setBookingStep(4);
+    await generateConfirmationEmail(bookingDetails, selectedDoctor);
   };
 
   const resetBooking = () => {
     setBookingStep(0);
     setSelectedDoctor(null);
-    setBookingDetails({ date: "", time: "", patientName: "" });
+    setEmailDraft("");
+    setBookingDetails({
+      date: "",
+      time: "",
+      patientName: "",
+      patientEmail: "",
+    });
   };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* Navigation */}
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-blue-600 text-xl">
@@ -139,6 +229,7 @@ export default function App() {
           <AdminDashboard
             doctors={doctors}
             onAddDoctor={addDoctor}
+            onDeleteDoctor={deleteDoctor}
             appointments={appointments}
           />
         ) : (
@@ -153,6 +244,8 @@ export default function App() {
             onPrev={prevStep}
             onConfirm={confirmBooking}
             onReset={resetBooking}
+            isSendingEmail={isSendingEmail}
+            emailDraft={emailDraft}
           />
         )}
       </main>
@@ -160,8 +253,12 @@ export default function App() {
   );
 }
 
-// --- Admin Components ---
-function AdminDashboard({ doctors, onAddDoctor, appointments }) {
+function AdminDashboard({
+  doctors,
+  onAddDoctor,
+  onDeleteDoctor,
+  appointments,
+}) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -195,7 +292,7 @@ function AdminDashboard({ doctors, onAddDoctor, appointments }) {
         <div>
           <h1 className="text-2xl font-bold">Admin Management</h1>
           <p className="text-slate-500">
-            Manage doctors and monitor appointments
+            Persistent storage enabled via LocalStorage
           </p>
         </div>
         <button
@@ -207,7 +304,6 @@ function AdminDashboard({ doctors, onAddDoctor, appointments }) {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {/* Stats */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <div className="text-slate-500 text-sm font-medium mb-1">
             Total Doctors
@@ -222,12 +318,12 @@ function AdminDashboard({ doctors, onAddDoctor, appointments }) {
         </div>
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <div className="text-slate-500 text-sm font-medium mb-1">
-            Today's Revenue
+            Total Revenue
           </div>
           <div className="text-3xl font-bold text-green-600">
             $
             {appointments.reduce(
-              (acc, curr) => acc + Number(curr.doctor.fee),
+              (acc, curr) => acc + (Number(curr.doctor?.fee) || 0),
               0
             )}
           </div>
@@ -238,28 +334,71 @@ function AdminDashboard({ doctors, onAddDoctor, appointments }) {
         <div className="p-4 border-b border-slate-200 bg-slate-50 font-semibold">
           Doctor Directory
         </div>
-        <table className="w-full text-left">
-          <thead className="text-xs uppercase text-slate-500 border-b border-slate-200">
-            <tr>
-              <th className="px-6 py-3">Doctor Name</th>
-              <th className="px-6 py-3">Specialty</th>
-              <th className="px-6 py-3">Fee</th>
-              <th className="px-6 py-3">Availability</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {doctors.map((doc) => (
-              <tr key={doc.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 font-medium">{doc.name}</td>
-                <td className="px-6 py-4">{doc.specialty}</td>
-                <td className="px-6 py-4">${doc.fee}</td>
-                <td className="px-6 py-4 text-sm text-slate-500">
-                  {doc.availability.join(", ")}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="text-xs uppercase text-slate-500 border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-3 font-bold">Doctor Name</th>
+                <th className="px-6 py-3 font-bold">Specialty</th>
+                <th className="px-6 py-3 font-bold">Fee</th>
+                <th className="px-6 py-3 font-bold text-right">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {doctors.map((doc) => (
+                <tr
+                  key={doc.id}
+                  className="hover:bg-slate-50 transition-colors"
+                >
+                  <td className="px-6 py-4 font-medium">{doc.name}</td>
+                  <td className="px-6 py-4 text-sm">{doc.specialty}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-slate-700">
+                    ${doc.fee}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => onDeleteDoctor(doc.id)}
+                      className="text-slate-400 hover:text-red-500 transition-colors p-2"
+                      title="Delete Doctor"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="p-4 border-b border-slate-200 bg-slate-50 font-semibold">
+          Recent Appointments (Saved)
+        </div>
+        <div className="p-4">
+          {appointments.length === 0 ? (
+            <p className="text-slate-400 text-sm italic py-4">
+              No appointments recorded yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {[...appointments].reverse().map((apt) => (
+                <div
+                  key={apt.id}
+                  className="flex items-center justify-between p-3 border rounded-lg text-sm"
+                >
+                  <div>
+                    <span className="font-bold">{apt.patientName}</span> with{" "}
+                    <span className="font-medium">{apt.doctor?.name}</span>
+                  </div>
+                  <div className="text-slate-500">
+                    {apt.date} at {apt.time}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {showAddModal && (
@@ -348,7 +487,6 @@ function AdminDashboard({ doctors, onAddDoctor, appointments }) {
   );
 }
 
-// --- Patient Flow Components ---
 function PatientBooking({
   doctors,
   step,
@@ -360,8 +498,9 @@ function PatientBooking({
   onPrev,
   onConfirm,
   onReset,
+  isSendingEmail,
+  emailDraft,
 }) {
-  // Progress Bar
   const renderProgress = () => {
     if (step === 0 || step === 4) return null;
     return (
@@ -403,8 +542,8 @@ function PatientBooking({
             <h1 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
               Book Your Next Checkup
             </h1>
-            <p className="text-slate-500 mt-2">
-              Choose from our top-rated specialists available today.
+            <p className="text-slate-500 mt-2 text-lg italic">
+              Your data is saved automatically in this browser.
             </p>
           </div>
 
@@ -459,6 +598,12 @@ function PatientBooking({
                 </div>
               </div>
             ))}
+            {doctors.length === 0 && (
+              <div className="col-span-full py-20 text-center text-slate-400">
+                <User size={48} className="mx-auto mb-4 opacity-20" />
+                <p>No doctors available. Add some in the Admin Dashboard.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -544,22 +689,47 @@ function PatientBooking({
                 </p>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">
-                Patient Full Name
-              </label>
-              <input
-                type="text"
-                placeholder="Enter patient's name"
-                className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                value={bookingDetails.patientName}
-                onChange={(e) =>
-                  setBookingDetails({
-                    ...bookingDetails,
-                    patientName: e.target.value,
-                  })
-                }
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Patient Full Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter patient's name"
+                  className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={bookingDetails.patientName}
+                  onChange={(e) =>
+                    setBookingDetails({
+                      ...bookingDetails,
+                      patientName: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Gmail Address
+                </label>
+                <div className="relative">
+                  <Mail
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={20}
+                  />
+                  <input
+                    type="email"
+                    placeholder="example@gmail.com"
+                    className="w-full p-4 pl-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={bookingDetails.patientEmail}
+                    onChange={(e) =>
+                      setBookingDetails({
+                        ...bookingDetails,
+                        patientEmail: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
             </div>
             <div className="flex gap-4 pt-4">
               <button
@@ -569,7 +739,9 @@ function PatientBooking({
                 Back
               </button>
               <button
-                disabled={!bookingDetails.patientName}
+                disabled={
+                  !bookingDetails.patientName || !bookingDetails.patientEmail
+                }
                 onClick={onNext}
                 className="flex-2 flex-[2] py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50"
               >
@@ -603,19 +775,6 @@ function PatientBooking({
               </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="block text-sm font-bold text-slate-700">
-                Card Details
-              </label>
-              <div className="p-4 border border-slate-200 rounded-xl flex items-center gap-3 text-slate-400 italic">
-                <CreditCard size={20} />
-                <span>•••• •••• •••• 4242 (Simulated)</span>
-              </div>
-              <p className="text-[10px] text-slate-400 text-center uppercase tracking-widest font-bold">
-                Secure SSL Encrypted Payment
-              </p>
-            </div>
-
             <div className="flex gap-4 pt-4">
               <button
                 onClick={onPrev}
@@ -625,9 +784,9 @@ function PatientBooking({
               </button>
               <button
                 onClick={onConfirm}
-                className="flex-2 flex-[2] py-4 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-100"
+                className="flex-2 flex-[2] py-4 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-100 transition-all flex items-center justify-center gap-2"
               >
-                Complete Payment & Book
+                Confirm & Block Schedule
               </button>
             </div>
           </div>
@@ -635,53 +794,84 @@ function PatientBooking({
       )}
 
       {step === 4 && (
-        <div className="max-w-md mx-auto text-center py-12 px-6 animate-in zoom-in-90 duration-300">
-          <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
-            <CheckCircle size={48} />
+        <div className="max-w-3xl mx-auto space-y-8 animate-in zoom-in-95 duration-300">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle size={40} />
+            </div>
+            <h2 className="text-3xl font-extrabold mb-2">
+              Appointment Secured!
+            </h2>
+            <p className="text-slate-500">
+              Schedule blocked for{" "}
+              <span className="text-slate-900 font-bold">
+                {selectedDoctor?.name}
+              </span>
+            </p>
           </div>
-          <h2 className="text-3xl font-extrabold mb-4">
-            Appointment Confirmed!
-          </h2>
-          <p className="text-slate-500 mb-8">
-            Your appointment with{" "}
-            <span className="font-bold text-slate-900">
-              {selectedDoctor?.name}
-            </span>{" "}
-            has been successfully scheduled for{" "}
-            <span className="font-bold text-slate-900">
-              {bookingDetails.date}
-            </span>{" "}
-            at{" "}
-            <span className="font-bold text-slate-900">
-              {bookingDetails.time}
-            </span>
-            .
-          </p>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-8 text-left space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Booking ID:</span>
-              <span className="font-mono font-bold">
-                #HS-{Math.floor(Math.random() * 90000 + 10000)}
-              </span>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+              <h3 className="font-bold mb-4 text-slate-700 border-b pb-2">
+                Booking Summary
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">ID:</span>
+                  <span className="font-mono font-bold">
+                    #HS-{Math.floor(Math.random() * 90000 + 10000)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Patient:</span>
+                  <span className="font-bold">
+                    {bookingDetails.patientName}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Email:</span>
+                  <span className="font-bold text-blue-600">
+                    {bookingDetails.patientEmail}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Status:</span>
+                  <span className="text-green-600 font-bold tracking-tighter">
+                    PAID & SAVED
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Patient:</span>
-              <span className="font-bold">{bookingDetails.patientName}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Status:</span>
-              <span className="text-green-600 font-bold uppercase tracking-tighter">
-                Paid
-              </span>
+
+            <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm flex flex-col">
+              <div className="bg-slate-900 p-3 flex items-center gap-2 text-white">
+                <Mail size={16} className="text-red-400" />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  Gmail Notification
+                </span>
+              </div>
+              <div className="p-6 flex-1 flex flex-col justify-center min-h-[160px]">
+                {isSendingEmail ? (
+                  <div className="flex flex-col items-center gap-3 text-slate-400">
+                    <Loader2 className="animate-spin" size={32} />
+                    <p className="text-sm font-medium">Sending to Gmail...</p>
+                  </div>
+                ) : (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-700">
+                    <div className="text-sm text-slate-700 whitespace-pre-line leading-relaxed border-l-4 border-blue-500 pl-4">
+                      {emailDraft}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           <button
             onClick={onReset}
-            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-blue-600 transition-colors"
+            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-blue-600 transition-colors shadow-xl"
           >
-            Go Back Home
+            Done
           </button>
         </div>
       )}
