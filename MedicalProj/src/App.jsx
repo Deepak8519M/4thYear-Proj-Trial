@@ -42,10 +42,12 @@ import {
   Phone,
   Navigation,
   ExternalLink,
+  ClipboardList,
+  FileSearch,
 } from "lucide-react";
 
 // --- Constants ---
-const API_KEY = "AIzaSyCQr8mua502c-BrFRTitoi7Vb5xod2hefY"; // Provided at runtime
+const API_KEY = "AIzaSyCkaC4j2ANCMnP0W0CyFwHJsQdVfJyYQwE"; // Provided at runtime
 const MODEL_TEXT = "gemini-2.5-flash-preview-09-2025";
 const MODEL_TTS = "gemini-2.5-flash-preview-tts";
 
@@ -62,17 +64,19 @@ const App = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
 
-  // Agent / Chat States
+  // Agent / Chat States - Enhanced version
   const [chatMessages, setChatMessages] = useState([
     {
       role: "assistant",
       content:
-        "Hello, I am your VitaCore AI Health Agent. How can I assist you today?",
+        "Welcome to your VitaCore Clinical Session. I am your AI Health Agent. Please describe your symptoms or health queries in detail for a comprehensive analysis.",
     },
   ]);
   const [userInput, setUserInput] = useState("");
   const [isChatting, setIsChatting] = useState(false);
-  const [generatedReport, setGeneratedReport] = useState(null);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [clinicalReport, setClinicalReport] = useState(null);
+  const [agentMode, setAgentMode] = useState("chat"); // 'chat' or 'report'
   const chatEndRef = useRef(null);
 
   // Pharmacy State
@@ -224,6 +228,53 @@ const App = () => {
       console.error(err);
       setIsSpeaking(false);
     }
+  };
+
+  // --- Agent Feature Handlers ---
+
+  const generateReport = async () => {
+    if (chatMessages.length < 2) return;
+    setIsGeneratingSummary(true);
+    setAgentMode("report");
+
+    const conversationHistory = chatMessages
+      .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+      .join("\n\n");
+
+    const prompt = `Based on the following medical conversation history, generate a high-fidelity, professional Clinical Consultation Report. 
+    Format it exactly with these sections:
+    1. PATIENT SUMMARY & CHIEF COMPLAINT
+    2. SYMPTOMATIC ANALYSIS
+    3. PRELIMINARY AI OBSERVATIONS
+    4. RECOMMENDED CLINICAL PATHWAY (Next Steps)
+    5. URGENCY LEVEL
+    6. IMPORTANT DISCLAIMER
+    
+    Conversation:
+    ${conversationHistory}`;
+
+    try {
+      const summary = await callGemini(
+        prompt,
+        "You are a Chief Medical Officer generating a formal clinical summary."
+      );
+      setClinicalReport(summary);
+    } catch (err) {
+      setErrorMessage("Report generation failed.");
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
+  const downloadReport = () => {
+    if (!clinicalReport) return;
+    const header = `VITACORE AI CLINICAL SUITE - MEDICAL REPORT\nGenerated: ${new Date().toLocaleString()}\n-------------------------------------------\n\n`;
+    const blob = new Blob([header + clinicalReport], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `VitaCore_Health_Report_${new Date().getTime()}.txt`;
+    link.click();
   };
 
   // --- Specific Feature Handlers ---
@@ -396,7 +447,205 @@ const App = () => {
     </button>
   );
 
-  // --- Views ---
+  // --- Enhanced Agent View ---
+
+  const renderAgentView = () => (
+    <div className="animate-in fade-in slide-in-from-bottom-10 duration-700 h-full flex flex-col gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter flex items-center gap-3">
+            <Bot className="text-violet-600" size={36} /> Health Concierge Pro
+          </h2>
+          <p className="text-slate-500 font-medium italic">
+            High-fidelity clinical agent and reporting suite.
+          </p>
+        </div>
+        <div className="flex gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
+          <button
+            onClick={() => setAgentMode("chat")}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+              agentMode === "chat"
+                ? "bg-white dark:bg-slate-900 text-violet-600 shadow-md"
+                : "text-slate-400"
+            }`}
+          >
+            <MessageSquarePlus size={14} /> LIVE CONSULT
+          </button>
+          <button
+            onClick={generateReport}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+              agentMode === "report"
+                ? "bg-white dark:bg-slate-900 text-violet-600 shadow-md"
+                : "text-slate-400"
+            }`}
+          >
+            <ClipboardList size={14} /> CLINICAL REPORT
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+        {/* Left Column: Chat */}
+        <div
+          className={`lg:col-span-7 flex flex-col transition-all duration-500 ${
+            agentMode === "report"
+              ? "opacity-40 grayscale pointer-events-none"
+              : ""
+          }`}
+        >
+          <div className="flex-1 bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden">
+            <div className="p-8 overflow-y-auto space-y-6 flex-1">
+              {chatMessages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`flex ${
+                    m.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[85%] p-6 rounded-[2.5rem] text-sm font-medium shadow-sm transition-all animate-in slide-in-from-bottom-2 ${
+                      m.role === "user"
+                        ? "bg-violet-600 text-white rounded-tr-none"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-tl-none border dark:border-slate-700"
+                    }`}
+                  >
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+
+            <form
+              className="p-6 bg-slate-50 dark:bg-slate-900 border-t dark:border-slate-800 flex gap-3 items-center"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!userInput.trim() || isChatting) return;
+                const newMsgs = [
+                  ...chatMessages,
+                  { role: "user", content: userInput },
+                ];
+                setChatMessages(newMsgs);
+                setUserInput("");
+                setIsChatting(true);
+                const res = await callGemini(
+                  userInput,
+                  "Professional health agent. Respond as a clinical expert."
+                );
+                setChatMessages([
+                  ...newMsgs,
+                  { role: "assistant", content: res },
+                ]);
+                setIsChatting(false);
+              }}
+            >
+              <div className="relative flex-1 group">
+                <input
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 p-5 pr-14 rounded-2xl outline-none shadow-inner dark:text-white border-2 border-transparent focus:border-violet-500/20 transition-all font-medium"
+                  placeholder="Describe symptoms, ask about treatments..."
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    playGeminiTTS(
+                      chatMessages[chatMessages.length - 1]?.content || ""
+                    )
+                  }
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-violet-600 transition-colors"
+                >
+                  <Volume2 size={20} />
+                </button>
+              </div>
+              <button className="bg-slate-900 dark:bg-violet-600 p-5 text-white rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-lg">
+                {isChatting ? (
+                  <Loader2 className="animate-spin" size={20} />
+                ) : (
+                  <Send size={20} />
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Right Column: Report */}
+        <div className="lg:col-span-5 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col h-full overflow-hidden relative">
+            <div className="p-6 border-b dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+              <h3 className="font-black text-xs uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                <FileSearch size={16} className="text-violet-500" /> Clinical
+                Report Summary
+              </h3>
+              {clinicalReport && (
+                <button
+                  onClick={downloadReport}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-md"
+                >
+                  <Download size={14} /> Export Report
+                </button>
+              )}
+            </div>
+
+            <div className="flex-1 p-8 overflow-y-auto">
+              {isGeneratingSummary ? (
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="w-16 h-16 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="font-black text-slate-400 uppercase tracking-widest text-xs">
+                    Synthesizing Clinical Data...
+                  </p>
+                </div>
+              ) : clinicalReport ? (
+                <div className="animate-in fade-in zoom-in-95 duration-500">
+                  <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    {clinicalReport}
+                  </pre>
+                  <div className="mt-8 p-6 bg-amber-50 dark:bg-amber-950/20 rounded-2xl border border-amber-100 dark:border-amber-900/30">
+                    <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest leading-normal">
+                      Note: This report is AI-generated for informational
+                      purposes. Please present this to a human specialist for
+                      validation.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center opacity-30 px-6">
+                  <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                    <ClipboardList size={40} className="text-slate-400" />
+                  </div>
+                  <h4 className="text-xl font-black text-slate-400 mb-2">
+                    No Active Report
+                  </h4>
+                  <p className="text-sm font-medium text-slate-400">
+                    Interact with the Health Concierge on the left, then click
+                    "CLINICAL REPORT" to generate a professional summary of your
+                    session.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {!clinicalReport &&
+              !isGeneratingSummary &&
+              chatMessages.length > 1 && (
+                <div className="p-6">
+                  <button
+                    onClick={generateReport}
+                    className="w-full py-4 bg-violet-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-violet-700 transition-all flex items-center justify-center gap-3 group"
+                  >
+                    <Sparkles
+                      size={18}
+                      className="group-hover:rotate-12 transition-transform"
+                    />{" "}
+                    Generate Professional Report
+                  </button>
+                </div>
+              )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderNearbyHospitals = () => (
     <div className="animate-in fade-in slide-in-from-right-12 duration-700 space-y-8">
@@ -911,8 +1160,6 @@ const App = () => {
     </div>
   );
 
-  // --- Main App Logic (Sidebar Nav) ---
-
   return (
     <div
       className={`min-h-screen transition-colors duration-500 ${
@@ -1084,65 +1331,7 @@ const App = () => {
                 </div>
               </div>
             ) : view === "agent" ? (
-              <div className="animate-in fade-in duration-700 flex flex-col h-[calc(100vh-10rem)]">
-                <h2 className="text-4xl font-black mb-8">Health Concierge</h2>
-                <div className="flex-1 bg-white dark:bg-slate-900 rounded-[3rem] shadow-xl flex flex-col overflow-hidden border dark:border-slate-800">
-                  <div className="flex-1 p-8 overflow-y-auto space-y-6">
-                    {chatMessages.map((m, i) => (
-                      <div
-                        key={i}
-                        className={`flex ${
-                          m.role === "user" ? "justify-end" : "justify-start"
-                        }`}
-                      >
-                        <div
-                          className={`max-w-[80%] p-6 rounded-[2rem] text-sm font-medium ${
-                            m.role === "user"
-                              ? "bg-violet-600 text-white rounded-tr-none"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-tl-none"
-                          }`}
-                        >
-                          {m.content}
-                        </div>
-                      </div>
-                    ))}
-                    <div ref={chatEndRef} />
-                  </div>
-                  <form
-                    className="p-4 bg-slate-50 dark:bg-slate-900 flex gap-2"
-                    onSubmit={async (e) => {
-                      e.preventDefault();
-                      if (!userInput || isChatting) return;
-                      const newMsgs = [
-                        ...chatMessages,
-                        { role: "user", content: userInput },
-                      ];
-                      setChatMessages(newMsgs);
-                      setUserInput("");
-                      setIsChatting(true);
-                      const res = await callGemini(
-                        userInput,
-                        "Professional health agent conversing with patient."
-                      );
-                      setChatMessages([
-                        ...newMsgs,
-                        { role: "assistant", content: res },
-                      ]);
-                      setIsChatting(false);
-                    }}
-                  >
-                    <input
-                      value={userInput}
-                      onChange={(e) => setUserInput(e.target.value)}
-                      className="flex-1 bg-white dark:bg-slate-800 p-5 rounded-2xl outline-none"
-                      placeholder="Ask me anything..."
-                    />
-                    <button className="bg-violet-600 p-5 text-white rounded-2xl">
-                      <Send size={20} />
-                    </button>
-                  </form>
-                </div>
-              </div>
+              renderAgentView()
             ) : (
               <div className="space-y-10">
                 <div className="flex justify-between items-center">
@@ -1246,7 +1435,6 @@ const App = () => {
   );
 };
 
-// Data for sidebar
 const tabs = [
   { id: "heart", label: "Cardiology", icon: Heart },
   { id: "diabetes", label: "Endocrinology", icon: Activity },
