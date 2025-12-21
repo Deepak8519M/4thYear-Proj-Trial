@@ -25,6 +25,7 @@ import {
   RefreshCw,
   Send,
   ExternalLink,
+  Lock,
 } from "lucide-react";
 
 // --- Configuration & Constants ---
@@ -214,7 +215,10 @@ export default function App() {
   };
 
   const confirmBooking = async () => {
+    // Transition to success state immediately for UX "speed"
+    // while processing the AI email in the background or during a very short loader
     setIsProcessing(true);
+
     const newApt = {
       id: `apt-${Date.now()}`,
       doctor: selectedDoctor,
@@ -222,10 +226,15 @@ export default function App() {
       status: "Upcoming",
       createdAt: new Date().toISOString(),
     };
-    setAppointments([...appointments, newApt]);
-    await generateEmail(bookingDetails, selectedDoctor);
-    setBookingStep(4);
-    setIsProcessing(false);
+
+    // Simulate quick bank verification
+    setTimeout(async () => {
+      setAppointments([...appointments, newApt]);
+      setBookingStep(4);
+      setIsProcessing(false);
+      // Background task
+      await generateEmail(bookingDetails, selectedDoctor);
+    }, 1200);
   };
 
   const updateAptStatus = (id, newStatus) => {
@@ -316,14 +325,64 @@ export default function App() {
           <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in-95">
             <Loader2 className="animate-spin text-blue-600" size={48} />
             <div className="text-center">
-              <p className="font-bold text-lg">Processing Cloud Services</p>
+              <p className="font-bold text-lg">Processing Transaction</p>
               <p className="text-sm text-slate-500">
-                Connecting to HealthSync AI Dispatcher...
+                Securing your health records...
               </p>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// --- Component: Credit Card Visual ---
+function VisualCard({ cardNumber, cardName, expiry, cvv }) {
+  const formattedNumber = (cardNumber || "•••• •••• •••• ••••")
+    .padEnd(16, "•")
+    .replace(/(.{4})/g, "$1 ")
+    .trim();
+
+  return (
+    <div className="relative w-full aspect-[1.6/1] rounded-[1.5rem] bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 p-6 text-white shadow-2xl shadow-blue-900/20 overflow-hidden flex flex-col justify-between group transition-all duration-500">
+      {/* Decorative patterns */}
+      <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-white/10 transition-colors" />
+      <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500/10 rounded-full -ml-20 -mb-20 blur-3xl group-hover:bg-blue-500/20 transition-colors" />
+
+      <div className="flex justify-between items-start">
+        <div className="w-12 h-10 bg-gradient-to-r from-yellow-400 to-yellow-200 rounded-lg flex flex-col justify-center gap-1 p-2">
+          <div className="h-[2px] w-full bg-slate-800/20" />
+          <div className="h-[2px] w-full bg-slate-800/20" />
+          <div className="h-[2px] w-full bg-slate-800/20" />
+        </div>
+        <div className="font-black italic text-xl tracking-tighter opacity-50">
+          VISA
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="text-xl md:text-2xl font-mono tracking-widest transition-all">
+          {formattedNumber}
+        </div>
+
+        <div className="flex justify-between items-end">
+          <div className="space-y-1">
+            <span className="text-[8px] uppercase font-bold tracking-[0.2em] opacity-50">
+              Card Holder
+            </span>
+            <p className="text-sm font-bold uppercase truncate max-w-[150px]">
+              {cardName || "YOUR NAME"}
+            </p>
+          </div>
+          <div className="space-y-1 text-right">
+            <span className="text-[8px] uppercase font-bold tracking-[0.2em] opacity-50">
+              Expires
+            </span>
+            <p className="text-sm font-bold">{expiry || "MM/YY"}</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -344,6 +403,14 @@ function PatientPortal({
   const [search, setSearch] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState("All Specialties");
 
+  // Card Info State
+  const [cardInfo, setCardInfo] = useState({
+    number: "",
+    name: "",
+    expiry: "",
+    cvv: "",
+  });
+
   const filteredDoctors = useMemo(() => {
     return doctors.filter((doc) => {
       const matchesSearch =
@@ -361,6 +428,12 @@ function PatientPortal({
     const body = encodeURIComponent(emailData.body);
     window.location.href = `mailto:${details.patientEmail}?subject=${subject}&body=${body}`;
   };
+
+  const isCardValid =
+    cardInfo.number.length >= 16 &&
+    cardInfo.name &&
+    cardInfo.expiry.length >= 4 &&
+    cardInfo.cvv.length >= 3;
 
   if (step === 0)
     return (
@@ -620,40 +693,126 @@ function PatientPortal({
           )}
 
           {step === 3 && (
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/30 space-y-8">
-              <h3 className="text-xl font-black flex items-center gap-3">
-                <CreditCard className="text-blue-600" /> Secure Checkout
-              </h3>
-              <div className="bg-slate-50 p-6 rounded-3xl space-y-4">
-                <div className="flex justify-between text-sm font-bold text-slate-500">
-                  <span>Consultation Fee</span>
-                  <span>${selectedDoctor.fee}</span>
+            <div className="space-y-6">
+              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/30 space-y-8">
+                <h3 className="text-xl font-black flex items-center gap-3">
+                  <CreditCard className="text-blue-600" /> Secure Checkout
+                </h3>
+
+                {/* Visual Card Component */}
+                <div className="perspective-[1000px]">
+                  <VisualCard
+                    cardNumber={cardInfo.number}
+                    cardName={cardInfo.name}
+                    expiry={cardInfo.expiry}
+                    cvv={cardInfo.cvv}
+                  />
                 </div>
-                <div className="flex justify-between text-sm font-bold text-slate-500">
-                  <span>Platform Service Fee</span>
-                  <span>$10.00</span>
+
+                <div className="grid gap-4 mt-8">
+                  <div>
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">
+                      Card Number
+                    </label>
+                    <input
+                      type="text"
+                      maxLength="16"
+                      placeholder="0000 0000 0000 0000"
+                      className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm"
+                      value={cardInfo.number}
+                      onChange={(e) =>
+                        setCardInfo({
+                          ...cardInfo,
+                          number: e.target.value.replace(/\D/g, ""),
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">
+                      Cardholder Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="FULL NAME"
+                      className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm uppercase"
+                      value={cardInfo.name}
+                      onChange={(e) =>
+                        setCardInfo({ ...cardInfo, name: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">
+                        Expiry Date
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="MM/YY"
+                        maxLength="5"
+                        className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm"
+                        value={cardInfo.expiry}
+                        onChange={(e) =>
+                          setCardInfo({ ...cardInfo, expiry: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">
+                        CVV
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="password"
+                          placeholder="•••"
+                          maxLength="3"
+                          className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm"
+                          value={cardInfo.cvv}
+                          onChange={(e) =>
+                            setCardInfo({ ...cardInfo, cvv: e.target.value })
+                          }
+                        />
+                        <Lock
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300"
+                          size={16}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="border-t-2 border-slate-200 border-dashed pt-4 flex justify-between items-center">
-                  <span className="text-lg font-black">Total Payable</span>
-                  <span className="text-3xl font-black text-blue-600">
-                    ${Number(selectedDoctor.fee) + 10}
-                  </span>
+
+                <div className="bg-slate-50 p-6 rounded-3xl space-y-4">
+                  <div className="flex justify-between text-sm font-bold text-slate-500">
+                    <span>Consultation Fee</span>
+                    <span>${selectedDoctor.fee}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-bold text-slate-500">
+                    <span>Platform Service Fee</span>
+                    <span>$10.00</span>
+                  </div>
+                  <div className="border-t-2 border-slate-200 border-dashed pt-4 flex justify-between items-center">
+                    <span className="text-lg font-black">Total Payable</span>
+                    <span className="text-3xl font-black text-blue-600">
+                      ${Number(selectedDoctor.fee) + 10}
+                    </span>
+                  </div>
                 </div>
+
+                <button
+                  onClick={onConfirm}
+                  disabled={!isCardValid}
+                  className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-2xl shadow-blue-200 disabled:opacity-30 disabled:cursor-not-allowed group flex items-center justify-center gap-3"
+                >
+                  Confirm & Pay{" "}
+                  <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                </button>
               </div>
-              <div className="flex items-center gap-3 p-4 rounded-2xl bg-green-50 text-green-700 text-xs font-bold uppercase tracking-widest border border-green-100">
-                <ShieldCheck size={18} /> 256-bit Encrypted Transaction
-              </div>
-              <button
-                onClick={onConfirm}
-                className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-2xl shadow-blue-200"
-              >
-                Pay & Confirm Appointment
-              </button>
             </div>
           )}
 
           {step === 4 && (
-            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/30 text-center space-y-8">
+            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/30 text-center space-y-8 animate-in zoom-in-90 duration-500">
               <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-xl shadow-green-100">
                 <CheckCircle size={40} />
               </div>
@@ -691,10 +850,11 @@ function PatientPortal({
                     </button>
                   </div>
                   <div className="text-white text-sm font-black mb-2 pb-2 border-b border-slate-800">
-                    Subject: {emailData.subject}
+                    Subject: {emailData.subject || "Generating confirmation..."}
                   </div>
-                  <div className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                    {emailData.body}
+                  <div className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-medium h-32 overflow-y-auto custom-scrollbar">
+                    {emailData.body ||
+                      "Please wait while our AI engine prepares your documentation..."}
                   </div>
                 </div>
               </div>
@@ -717,27 +877,32 @@ function PatientPortal({
             <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
               Doctor Summary
             </h4>
-            <div className="flex gap-4 items-center mb-6">
-              <img
-                src={selectedDoctor.image}
-                className="w-20 h-20 rounded-2xl object-cover shadow-lg"
-                alt=""
-              />
-              <div>
-                <p className="font-black text-lg leading-tight">
-                  {selectedDoctor.name}
-                </p>
-                <p className="text-xs font-bold text-blue-600 uppercase">
-                  {selectedDoctor.specialty}
-                </p>
-                <div className="flex items-center gap-1 mt-1">
-                  <Star size={12} className="text-yellow-500 fill-yellow-500" />
-                  <span className="text-xs font-black text-slate-400">
-                    {selectedDoctor.rating} (50+ reviews)
-                  </span>
+            {selectedDoctor && (
+              <div className="flex gap-4 items-center mb-6">
+                <img
+                  src={selectedDoctor.image}
+                  className="w-20 h-20 rounded-2xl object-cover shadow-lg"
+                  alt=""
+                />
+                <div>
+                  <p className="font-black text-lg leading-tight">
+                    {selectedDoctor.name}
+                  </p>
+                  <p className="text-xs font-bold text-blue-600 uppercase">
+                    {selectedDoctor.specialty}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Star
+                      size={12}
+                      className="text-yellow-500 fill-yellow-500"
+                    />
+                    <span className="text-xs font-black text-slate-400">
+                      {selectedDoctor.rating} (50+ reviews)
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-4 pt-4 border-t border-slate-100">
               <div className="flex items-center gap-3 text-sm font-bold text-slate-600">
