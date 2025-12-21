@@ -1,190 +1,189 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Heart,
-  Activity,
-  Wind,
-  ChevronRight,
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-  Sparkles,
-  BrainCircuit,
-  Volume2,
-  MessageSquarePlus,
-  ShieldCheck,
-  Upload,
-  Image as ImageIcon,
-  ScanSearch,
-  Zap,
-  X,
-  Sun,
-  Moon,
-  LayoutDashboard,
-  TrendingUp,
-  Users,
-  Clock,
-  ArrowUpRight,
-  Bot,
-  Send,
-  FileText,
-  Download,
-  RotateCcw,
-  Pill,
-  Search,
-  Stethoscope,
-  DollarSign,
-  ShoppingCart,
-  History,
-  Info,
-  MapPin,
-  Calendar,
-  Star,
-  Phone,
-  Navigation,
-  ExternalLink,
+Heart,
+Activity,
+Wind,
+ChevronRight,
+AlertCircle,
+CheckCircle2,
+Loader2,
+Sparkles,
+BrainCircuit,
+Volume2,
+MessageSquarePlus,
+ShieldCheck,
+Upload,
+Image as ImageIcon,
+ScanSearch,
+Zap,
+X,
+Sun,
+Moon,
+LayoutDashboard,
+TrendingUp,
+Users,
+Clock,
+ArrowUpRight,
+Bot,
+Send,
+FileText,
+Download,
+RotateCcw,
+Pill,
+Search,
+Stethoscope,
+DollarSign,
+ShoppingCart,
+History,
+Info,
+MapPin,
+Calendar,
+Star,
+Phone,
+Navigation,
 } from "lucide-react";
 
 // --- Constants ---
-const API_KEY = "AIzaSyCQr8mua502c-BrFRTitoi7Vb5xod2hefY"; // Provided at runtime
+const API_KEY = "AIzaSyCXScRtm96rR5iqrnZ_xmQcXeptRNoVcro"; // Provided at runtime
 const MODEL_TEXT = "gemini-2.5-flash-preview-09-2025";
 const MODEL_TTS = "gemini-2.5-flash-preview-tts";
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState("heart");
-  const [view, setView] = useState("diagnostic"); // 'diagnostic', 'dashboard', 'agent', 'pharmacy', 'symptoms', 'hospitals', 'booking'
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isPredicting, setIsPredicting] = useState(false);
-  const [prediction, setPrediction] = useState(null);
+const [activeTab, setActiveTab] = useState("heart");
+const [view, setView] = useState("diagnostic"); // 'diagnostic', 'dashboard', 'agent', 'pharmacy', 'symptoms', 'hospitals', 'booking'
+const [isDarkMode, setIsDarkMode] = useState(false);
+const [isPredicting, setIsPredicting] = useState(false);
+const [prediction, setPrediction] = useState(null);
 
-  // AI Integration States
-  const [isAiProcessing, setIsAiProcessing] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(null);
+// AI Integration States
+const [isAiProcessing, setIsAiProcessing] = useState(false);
+const [aiAnalysis, setAiAnalysis] = useState(null);
+const [isSpeaking, setIsSpeaking] = useState(false);
+const [errorMessage, setErrorMessage] = useState(null);
 
-  // Agent / Chat States
-  const [chatMessages, setChatMessages] = useState([
-    {
-      role: "assistant",
-      content:
-        "Hello, I am your VitaCore AI Health Agent. How can I assist you today?",
-    },
-  ]);
-  const [userInput, setUserInput] = useState("");
-  const [isChatting, setIsChatting] = useState(false);
-  const [generatedReport, setGeneratedReport] = useState(null);
-  const chatEndRef = useRef(null);
+// Agent / Chat States
+const [chatMessages, setChatMessages] = useState([
+{
+role: "assistant",
+content:
+"Hello, I am your VitaCore AI Health Agent. How can I assist you today?",
+},
+]);
+const [userInput, setUserInput] = useState("");
+const [isChatting, setIsChatting] = useState(false);
+const [generatedReport, setGeneratedReport] = useState(null);
+const chatEndRef = useRef(null);
 
-  // Pharmacy State
-  const [pharmacyQuery, setPharmacyQuery] = useState("");
-  const [pharmacyResults, setPharmacyResults] = useState(null);
-  const [pharmacyMode, setPharmacyMode] = useState("recommend"); // 'recommend' or 'alternative'
+// Pharmacy State
+const [pharmacyQuery, setPharmacyQuery] = useState("");
+const [pharmacyResults, setPharmacyResults] = useState(null);
+const [pharmacyMode, setPharmacyMode] = useState("recommend"); // 'recommend' or 'alternative'
 
-  // Symptom Checker State
-  const [symptomInput, setSymptomInput] = useState("");
-  const [symptomAnalysis, setSymptomAnalysis] = useState(null);
+// Symptom Checker State
+const [symptomInput, setSymptomInput] = useState("");
+const [symptomAnalysis, setSymptomAnalysis] = useState(null);
 
-  // Nearby Hospitals State
-  const [locationQuery, setLocationQuery] = useState("");
-  const [hospitalResults, setHospitalResults] = useState(null);
+// Nearby Hospitals State
+const [locationQuery, setLocationQuery] = useState("");
+const [hospitalResults, setHospitalResults] = useState(null); // Now stores array of objects
 
-  // Booking State
-  const [bookingSuccess, setBookingSuccess] = useState(false);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
+// Booking State
+const [bookingSuccess, setBookingSuccess] = useState(false);
+const [selectedDoctor, setSelectedDoctor] = useState(null);
 
-  // Imaging State
-  const [imagePreview, setImagePreview] = useState(null);
-  const fileInputRef = useRef(null);
+// Imaging State
+const [imagePreview, setImagePreview] = useState(null);
+const fileInputRef = useRef(null);
 
-  // Form states for each disease type
-  const [formData, setFormData] = useState({
-    heart: {
-      age: "",
-      sex: "1",
-      cp: "0",
-      trestbps: "",
-      chol: "",
-      fbs: "0",
-      restecg: "0",
-      thalach: "",
-    },
-    diabetes: {
-      pregnancies: "",
-      glucose: "",
-      bloodPressure: "",
-      skinThickness: "",
-      insulin: "",
-      bmi: "",
-      dpf: "",
-      age: "",
-    },
-    lung: {
-      age: "",
-      smoking: "1",
-      yellowFingers: "1",
-      anxiety: "1",
-      peerPressure: "1",
-      chronicDisease: "1",
-      fatigue: "1",
-      wheezing: "1",
-    },
-    oncology: { scanType: "Lung Cancer X-Ray" },
-  });
+// Form states for each disease type
+const [formData, setFormData] = useState({
+heart: {
+age: "",
+sex: "1",
+cp: "0",
+trestbps: "",
+chol: "",
+fbs: "0",
+restecg: "0",
+thalach: "",
+},
+diabetes: {
+pregnancies: "",
+glucose: "",
+bloodPressure: "",
+skinThickness: "",
+insulin: "",
+bmi: "",
+dpf: "",
+age: "",
+},
+lung: {
+age: "",
+smoking: "1",
+yellowFingers: "1",
+anxiety: "1",
+peerPressure: "1",
+chronicDisease: "1",
+fatigue: "1",
+wheezing: "1",
+},
+oncology: { scanType: "Lung Cancer X-Ray" },
+});
 
-  useEffect(() => {
-    if (view === "agent") {
-      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [chatMessages, view]);
+useEffect(() => {
+if (view === "agent") {
+chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+}
+}, [chatMessages, view]);
 
-  // --- Gemini API Helpers ---
+// --- Gemini API Helpers ---
 
-  const executeGeminiRequest = async (url, payload) => {
-    let delay = 1000;
-    for (let i = 0; i < 5; i++) {
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error("API Error");
-        const data = await response.json();
-        return data;
-      } catch (err) {
-        if (i === 4) throw err;
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        delay *= 2;
-      }
-    }
-  };
+const executeGeminiRequest = async (url, payload) => {
+let delay = 1000;
+for (let i = 0; i < 5; i++) {
+try {
+const response = await fetch(url, {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify(payload),
+});
+if (!response.ok) throw new Error("API Error");
+const data = await response.json();
+return data;
+} catch (err) {
+if (i === 4) throw err;
+await new Promise((resolve) => setTimeout(resolve, delay));
+delay \*= 2;
+}
+}
+};
 
-  const callGemini = async (
-    prompt,
-    systemInstruction = "You are a professional medical AI assistant."
-  ) => {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_TEXT}:generateContent?key=${API_KEY}`;
-    const payload = {
-      contents: [{ parts: [{ text: prompt }] }],
-      systemInstruction: { parts: [{ text: systemInstruction }] },
-    };
-    const result = await executeGeminiRequest(url, payload);
-    return result.candidates?.[0]?.content?.parts?.[0]?.text;
-  };
+const callGemini = async (
+prompt,
+systemInstruction = "You are a professional medical AI assistant."
+) => {
+const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_TEXT}:generateContent?key=${API_KEY}`;
+const payload = {
+contents: [{ parts: [{ text: prompt }] }],
+systemInstruction: { parts: [{ text: systemInstruction }] },
+};
+const result = await executeGeminiRequest(url, payload);
+return result.candidates?.[0]?.content?.parts?.[0]?.text;
+};
 
-  const playGeminiTTS = async (text) => {
-    if (isSpeaking) return;
-    setIsSpeaking(true);
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_TTS}:generateContent?key=${API_KEY}`;
-    const payload = {
-      contents: [{ parts: [{ text: `Say professionally: ${text}` }] }],
-      generationConfig: {
-        responseModalities: ["AUDIO"],
-        speechConfig: {
-          voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
-        },
-      },
-    };
+const playGeminiTTS = async (text) => {
+if (isSpeaking) return;
+setIsSpeaking(true);
+const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_TTS}:generateContent?key=${API_KEY}`;
+const payload = {
+contents: [{ parts: [{ text: `Say professionally: ${text}` }] }],
+generationConfig: {
+responseModalities: ["AUDIO"],
+speechConfig: {
+voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
+},
+},
+};
 
     try {
       const response = await fetch(url, {
@@ -224,25 +223,26 @@ const App = () => {
       console.error(err);
       setIsSpeaking(false);
     }
-  };
 
-  // --- Specific Feature Handlers ---
+};
 
-  const handlePharmacySearch = async (e) => {
-    e.preventDefault();
-    if (!pharmacyQuery.trim()) return;
-    setIsAiProcessing(true);
-    setPharmacyResults(null);
+// --- Specific Feature Handlers ---
+
+const handlePharmacySearch = async (e) => {
+e.preventDefault();
+if (!pharmacyQuery.trim()) return;
+setIsAiProcessing(true);
+setPharmacyResults(null);
 
     let prompt = "";
     if (pharmacyMode === "recommend") {
-      prompt = `Provide a comprehensive medicine recommendation for the condition: "${pharmacyQuery}". 
-      List 3-5 standard medications, typical dosages, and common side effects. 
-      Format as a clean professional report with markdown headers. 
+      prompt = `Provide a comprehensive medicine recommendation for the condition: "${pharmacyQuery}".
+      List 3-5 standard medications, typical dosages, and common side effects.
+      Format as a clean professional report with markdown headers.
       Always include a disclaimer that this is not medical advice.`;
     } else {
-      prompt = `For the medicine "${pharmacyQuery}", suggest 3-5 low-cost or generic alternatives that use the same active ingredients. 
-      Explain the price difference logic (generic vs brand) and ensure safety warnings are included. 
+      prompt = `For the medicine "${pharmacyQuery}", suggest 3-5 low-cost or generic alternatives that use the same active ingredients.
+      Explain the price difference logic (generic vs brand) and ensure safety warnings are included.
       Format as a comparison list.`;
     }
 
@@ -257,16 +257,17 @@ const App = () => {
     } finally {
       setIsAiProcessing(false);
     }
-  };
 
-  const handleSymptomAnalysis = async (e) => {
-    e.preventDefault();
-    if (!symptomInput.trim()) return;
-    setIsAiProcessing(true);
-    setSymptomAnalysis(null);
+};
 
-    const prompt = `Analyze these symptoms: "${symptomInput}". 
-    Identify the 3 most likely medical conditions. 
+const handleSymptomAnalysis = async (e) => {
+e.preventDefault();
+if (!symptomInput.trim()) return;
+setIsAiProcessing(true);
+setSymptomAnalysis(null);
+
+    const prompt = `Analyze these symptoms: "${symptomInput}".
+    Identify the 3 most likely medical conditions.
     For each, provide: 1. Condition Name, 2. Probable Confidence (%), 3. Recommended Specialist (e.g., Cardiologist), 4. Urgency Level (Low/Medium/High).
     Keep it professional and concise.`;
 
@@ -281,13 +282,14 @@ const App = () => {
     } finally {
       setIsAiProcessing(false);
     }
-  };
 
-  const handleHospitalSearch = async (e) => {
-    e.preventDefault();
-    if (!locationQuery.trim()) return;
-    setIsAiProcessing(true);
-    setHospitalResults(null);
+};
+
+const handleHospitalSearch = async (e) => {
+e.preventDefault();
+if (!locationQuery.trim()) return;
+setIsAiProcessing(true);
+setHospitalResults(null);
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_TEXT}:generateContent?key=${API_KEY}`;
     const payload = {
@@ -295,7 +297,7 @@ const App = () => {
         {
           parts: [
             {
-              text: `Locate 5 real hospitals near "${locationQuery}" immediately. Output JSON.`,
+              text: `Find 5 major hospitals near "${locationQuery}". Return a JSON list of hospitals.`,
             },
           ],
         },
@@ -303,7 +305,7 @@ const App = () => {
       systemInstruction: {
         parts: [
           {
-            text: "Return a JSON object with a 'hospitals' array. Each object: 'name', 'address', 'specialty', 'emergencyRoom' (boolean), 'rating' (float 1-5). Use real data for this city.",
+            text: "You are a clinical logistics agent. Return ONLY a JSON array of hospital objects. Each object MUST have: 'name', 'address', 'specialty', 'emergencyRoom' (boolean), and 'rating' (number 1-5).",
           },
         ],
       },
@@ -323,13 +325,6 @@ const App = () => {
                   emergencyRoom: { type: "BOOLEAN" },
                   rating: { type: "NUMBER" },
                 },
-                required: [
-                  "name",
-                  "address",
-                  "specialty",
-                  "emergencyRoom",
-                  "rating",
-                ],
               },
             },
           },
@@ -339,85 +334,83 @@ const App = () => {
 
     try {
       const result = await executeGeminiRequest(url, payload);
-      const content = result.candidates?.[0]?.content?.parts?.[0]?.text;
-      const parsed = JSON.parse(content);
+      const parsed = JSON.parse(
+        result.candidates?.[0]?.content?.parts?.[0]?.text
+      );
       setHospitalResults(parsed.hospitals);
     } catch (err) {
-      setErrorMessage(
-        "Could not fetch nearby hospitals. Please try a different location."
-      );
+      setErrorMessage("Hospital locator failed.");
       console.error(err);
     } finally {
       setIsAiProcessing(false);
     }
-  };
 
-  const handleBooking = (doc) => {
-    setSelectedDoctor(doc);
-    setIsAiProcessing(true);
-    setTimeout(() => {
-      setIsAiProcessing(false);
-      setBookingSuccess(true);
-      setTimeout(() => {
-        setBookingSuccess(false);
-        setSelectedDoctor(null);
-      }, 3000);
-    }, 1500);
-  };
+};
 
-  // --- UI Components ---
+const handleBooking = (doc) => {
+setSelectedDoctor(doc);
+setIsAiProcessing(true);
+setTimeout(() => {
+setIsAiProcessing(false);
+setBookingSuccess(true);
+setTimeout(() => {
+setBookingSuccess(false);
+setSelectedDoctor(null);
+}, 3000);
+}, 1500);
+};
 
-  const SidebarButton = ({
-    icon: Icon,
-    label,
-    id,
-    currentView,
-    onClick,
-    colorClass = "",
-  }) => (
-    <button
-      onClick={() => onClick(id)}
-      className={`flex items-center gap-4 p-4 rounded-[1.25rem] transition-all font-bold text-sm w-full text-left ${
+// --- UI Components ---
+
+const SidebarButton = ({
+icon: Icon,
+label,
+id,
+currentView,
+onClick,
+colorClass = "",
+}) => (
+<button
+onClick={() => onClick(id)}
+className={`flex items-center gap-4 p-4 rounded-[1.25rem] transition-all font-bold text-sm w-full text-left ${
         currentView === id
           ? `bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white ${colorClass}`
           : "text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-      }`}
-    >
-      <div
-        className={`p-2 rounded-xl shadow-sm ${
+      }`} >
+<div
+className={`p-2 rounded-xl shadow-sm ${
           currentView === id
             ? "bg-white dark:bg-slate-900"
             : "bg-white dark:bg-slate-900 opacity-60"
-        }`}
-      >
-        <Icon size={18} />
-      </div>
-      {label}
-    </button>
-  );
+        }`} >
+<Icon size={18} />
+</div>
+{label}
+</button>
+);
 
-  // --- Views ---
+// --- Views ---
 
-  const renderNearbyHospitals = () => (
-    <div className="animate-in fade-in slide-in-from-right-12 duration-700 space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            Rapid Hospital Locator
-          </h2>
-          <p className="text-slate-500 dark:text-slate-400 font-medium italic">
-            Instant identification of medical hubs in your area.
-          </p>
-        </div>
-      </div>
+const renderNearbyHospitals = () => (
+<div className="animate-in fade-in slide-in-from-right-12 duration-700 space-y-8">
+<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+<div>
+<h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+Nearby Hospitals
+</h2>
+<p className="text-slate-500 dark:text-slate-400 font-medium italic">
+Discover clinical facilities in your immediate region.
+</p>
+</div>
+</div>
 
       <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 md:p-12 border border-slate-100 dark:border-slate-800 shadow-xl">
         <form onSubmit={handleHospitalSearch} className="relative mb-12">
           <div className="relative group">
             <input
               type="text"
-              placeholder="Enter city or ZIP code (e.g. Vizag, 530001)..."
-              className="w-full bg-slate-50 dark:bg-slate-800 p-6 pr-44 rounded-[2.5rem] border-none focus:ring-4 ring-cyan-100 dark:ring-cyan-900/20 outline-none dark:text-white text-lg font-medium transition-all"
+              placeholder="Search city or location (e.g., Visakhapatnam, Vizag)..."
+              className="w-full bg-slate-50 dark:bg-slate-800 p-6 pr-40 rounded-[2.5rem] border-none focus:ring-4 ring-cyan-100 dark:ring-cyan-900/20 outline-none dark:text-white text-lg font-medium transition-all"
               value={locationQuery}
               onChange={(e) => setLocationQuery(e.target.value)}
             />
@@ -429,9 +422,9 @@ const App = () => {
               {isAiProcessing ? (
                 <Loader2 className="animate-spin" size={16} />
               ) : (
-                <Zap size={16} />
+                <MapPin size={16} />
               )}
-              Scan Location
+              Find Hospitals
             </button>
           </div>
         </form>
@@ -441,33 +434,28 @@ const App = () => {
             {hospitalResults.map((hospital, idx) => (
               <div
                 key={idx}
-                className="bg-white dark:bg-slate-800 rounded-[2.5rem] p-8 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-2xl transition-all group flex flex-col relative overflow-hidden"
+                className="bg-white dark:bg-slate-800 rounded-[2.5rem] p-8 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all group flex flex-col"
               >
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <MapPin size={100} />
-                </div>
-
                 <div className="flex justify-between items-start mb-6">
                   <div className="p-4 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 rounded-3xl group-hover:scale-110 transition-transform">
-                    <Stethoscope size={24} />
+                    <MapPin size={24} />
                   </div>
                   {hospital.emergencyRoom && (
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-[10px] font-black rounded-full uppercase tracking-widest border border-rose-200 dark:border-rose-900/50">
-                      <span className="w-1.5 h-1.5 bg-rose-600 rounded-full animate-pulse" />
-                      Critical Care
-                    </div>
+                    <span className="flex items-center gap-1.5 px-3 py-1 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-[10px] font-black rounded-full uppercase tracking-widest border border-rose-100 dark:border-rose-900/50">
+                      <AlertCircle size={10} /> 24/7 ER
+                    </span>
                   )}
                 </div>
 
-                <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2 leading-tight pr-6">
+                <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2 leading-tight">
                   {hospital.name}
                 </h3>
 
-                <div className="flex items-center gap-1 mb-6">
+                <div className="flex items-center gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      size={14}
+                      size={12}
                       className={
                         i < Math.floor(hospital.rating || 0)
                           ? "text-amber-400 fill-current"
@@ -475,39 +463,26 @@ const App = () => {
                       }
                     />
                   ))}
-                  <span className="text-xs font-black text-slate-400 ml-2 tracking-tighter uppercase">
-                    {hospital.rating} Rating
+                  <span className="text-[10px] font-bold text-slate-400 ml-1">
+                    ({hospital.rating}/5)
                   </span>
                 </div>
 
-                <div className="space-y-4 mb-10 flex-1">
-                  <div className="flex gap-4">
-                    <Activity
-                      size={18}
-                      className="text-cyan-500 flex-shrink-0"
-                    />
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
-                        Primary Focus
-                      </p>
-                      <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                        {hospital.specialty}
-                      </p>
-                    </div>
+                <div className="space-y-4 mb-8">
+                  <div className="flex gap-3">
+                    <Info size={16} className="text-slate-400 flex-shrink-0" />
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                      {hospital.specialty}
+                    </p>
                   </div>
-                  <div className="flex gap-4">
+                  <div className="flex gap-3">
                     <MapPin
-                      size={18}
+                      size={16}
                       className="text-slate-400 flex-shrink-0"
                     />
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
-                        Address
-                      </p>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
-                        {hospital.address}
-                      </p>
-                    </div>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-300 leading-relaxed">
+                      {hospital.address}
+                    </p>
                   </div>
                 </div>
 
@@ -520,83 +495,64 @@ const App = () => {
                       "_blank"
                     )
                   }
-                  className="w-full py-4 bg-slate-900 dark:bg-cyan-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-cyan-700 transition-all flex items-center justify-center gap-3 shadow-xl group/btn"
+                  className="mt-auto w-full py-4 bg-slate-900 dark:bg-cyan-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-cyan-700 transition-all flex items-center justify-center gap-3 shadow-lg"
                 >
-                  <Navigation
-                    size={18}
-                    className="group-hover/btn:translate-x-1 transition-transform"
-                  />
+                  <Navigation size={16} />
                   Get Directions
-                  <ExternalLink size={14} className="opacity-50" />
                 </button>
               </div>
             ))}
           </div>
         ) : (
-          <div className="h-96 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[4rem] flex flex-col items-center justify-center text-center p-12 relative overflow-hidden">
-            {isAiProcessing ? (
-              <div className="space-y-6">
-                <div className="w-24 h-24 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                <div>
-                  <h3 className="text-2xl font-black text-slate-800 dark:text-white">
-                    Mapping Local Clinical Hubs...
-                  </h3>
-                  <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mt-2">
-                    Connecting to regional health database
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="opacity-30">
-                <div className="w-24 h-24 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 mx-auto">
-                  <MapPin size={48} className="text-slate-300" />
-                </div>
-                <h3 className="text-2xl font-black text-slate-400">
-                  Regional Diagnostic View
-                </h3>
-                <p className="text-slate-300 font-medium max-w-xs mt-2 mx-auto">
-                  Search for a location above to immediately generate hospital
-                  cards with routing links.
-                </p>
-              </div>
-            )}
+          <div className="h-96 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[4rem] flex flex-col items-center justify-center text-center p-12 opacity-30">
+            <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+              <MapPin size={40} className="text-slate-300" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-400">
+              Search for Medical Hubs
+            </h3>
+            <p className="text-slate-300 font-medium max-w-xs mt-2">
+              Enter your city to view nearby clinical centers and navigation
+              links.
+            </p>
           </div>
         )}
       </div>
     </div>
-  );
 
-  const renderDoctorBooking = () => {
-    const doctors = [
-      {
-        name: "Dr. Elena Vance",
-        specialty: "Cardiology",
-        rating: 4.9,
-        exp: "15 yrs",
-        img: "EV",
-      },
-      {
-        name: "Dr. Marcus Thorne",
-        specialty: "Endocrinology",
-        rating: 4.8,
-        exp: "12 yrs",
-        img: "MT",
-      },
-      {
-        name: "Dr. Sarah Chen",
-        specialty: "Pulmonology",
-        rating: 5.0,
-        exp: "10 yrs",
-        img: "SC",
-      },
-      {
-        name: "Dr. Julian Ross",
-        specialty: "Oncology",
-        rating: 4.7,
-        exp: "18 yrs",
-        img: "JR",
-      },
-    ];
+);
+
+const renderDoctorBooking = () => {
+const doctors = [
+{
+name: "Dr. Elena Vance",
+specialty: "Cardiology",
+rating: 4.9,
+exp: "15 yrs",
+img: "EV",
+},
+{
+name: "Dr. Marcus Thorne",
+specialty: "Endocrinology",
+rating: 4.8,
+exp: "12 yrs",
+img: "MT",
+},
+{
+name: "Dr. Sarah Chen",
+specialty: "Pulmonology",
+rating: 5.0,
+exp: "10 yrs",
+img: "SC",
+},
+{
+name: "Dr. Julian Ross",
+specialty: "Oncology",
+rating: 4.7,
+exp: "18 yrs",
+img: "JR",
+},
+];
 
     return (
       <div className="animate-in fade-in slide-in-from-right-12 duration-700 space-y-8">
@@ -689,42 +645,41 @@ const App = () => {
         </div>
       </div>
     );
-  };
 
-  const renderPharmacy = () => (
-    <div className="animate-in fade-in slide-in-from-right-12 duration-700 space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            Pharmacy Hub
-          </h2>
-          <p className="text-slate-500 dark:text-slate-400 font-medium italic">
-            Advanced medication insights & cost-optimizer.
-          </p>
-        </div>
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
-          <button
-            onClick={() => setPharmacyMode("recommend")}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+};
+
+const renderPharmacy = () => (
+<div className="animate-in fade-in slide-in-from-right-12 duration-700 space-y-8">
+<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+<div>
+<h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+Pharmacy Hub
+</h2>
+<p className="text-slate-500 dark:text-slate-400 font-medium italic">
+Advanced medication insights & cost-optimizer.
+</p>
+</div>
+<div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
+<button
+onClick={() => setPharmacyMode("recommend")}
+className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
               pharmacyMode === "recommend"
                 ? "bg-white dark:bg-slate-900 text-violet-600 shadow-sm"
                 : "text-slate-400"
-            }`}
-          >
-            RECOMMEND
-          </button>
-          <button
-            onClick={() => setPharmacyMode("alternative")}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+            }`} >
+RECOMMEND
+</button>
+<button
+onClick={() => setPharmacyMode("alternative")}
+className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
               pharmacyMode === "alternative"
                 ? "bg-white dark:bg-slate-900 text-violet-600 shadow-sm"
                 : "text-slate-400"
-            }`}
-          >
-            ALT-SEARCH
-          </button>
-        </div>
-      </div>
+            }`} >
+ALT-SEARCH
+</button>
+</div>
+</div>
 
       <div className="bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden">
         <div className="p-8 md:p-12">
@@ -804,18 +759,19 @@ const App = () => {
         </div>
       </div>
     </div>
-  );
 
-  const renderSymptomChecker = () => (
-    <div className="animate-in fade-in slide-in-from-right-12 duration-700 space-y-8">
-      <div>
-        <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-          Symptom Detector
-        </h2>
-        <p className="text-slate-500 dark:text-slate-400 font-medium italic">
-          Describe your discomfort for AI-powered disease mapping.
-        </p>
-      </div>
+);
+
+const renderSymptomChecker = () => (
+<div className="animate-in fade-in slide-in-from-right-12 duration-700 space-y-8">
+<div>
+<h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+Symptom Detector
+</h2>
+<p className="text-slate-500 dark:text-slate-400 font-medium italic">
+Describe your discomfort for AI-powered disease mapping.
+</p>
+</div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
         <div className="lg:col-span-2 space-y-6">
@@ -909,40 +865,39 @@ const App = () => {
         </div>
       </div>
     </div>
-  );
 
-  // --- Main App Logic (Sidebar Nav) ---
+);
 
-  return (
-    <div
-      className={`min-h-screen transition-colors duration-500 ${
+// --- Main App Logic (Sidebar Nav) ---
+
+return (
+<div
+className={`min-h-screen transition-colors duration-500 ${
         isDarkMode ? "dark" : ""
-      }`}
-    >
-      <div className="bg-[#F8FAFC] dark:bg-slate-950 flex flex-col md:flex-row font-sans text-slate-900 dark:text-slate-100 selection:bg-violet-100 selection:text-violet-900 min-h-screen">
-        {/* Sidebar */}
-        <aside className="w-full md:w-80 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 p-8 flex flex-col gap-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-tr from-violet-600 to-indigo-600 p-2.5 rounded-2xl shadow-lg">
-                <Zap className="text-white fill-current" size={24} />
-              </div>
-              <div>
-                <h1 className="text-xl font-black tracking-tight text-slate-800 dark:text-white uppercase">
-                  VitaCore AI
-                </h1>
-                <p className="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase">
-                  Med Suite Pro
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-            >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-          </div>
+      }`} >
+<div className="bg-[#F8FAFC] dark:bg-slate-950 flex flex-col md:flex-row font-sans text-slate-900 dark:text-slate-100 selection:bg-violet-100 selection:text-violet-900 min-h-screen">
+{/_ Sidebar _/}
+<aside className="w-full md:w-80 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 p-8 flex flex-col gap-10">
+<div className="flex items-center justify-between">
+<div className="flex items-center gap-3">
+<div className="bg-gradient-to-tr from-violet-600 to-indigo-600 p-2.5 rounded-2xl shadow-lg">
+<Zap className="text-white fill-current" size={24} />
+</div>
+<div>
+<h1 className="text-xl font-black tracking-tight text-slate-800 dark:text-white uppercase">
+VitaCore AI
+</h1>
+<p className="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase">
+Med Suite Pro
+</p>
+</div>
+</div>
+<button
+onClick={() => setIsDarkMode(!isDarkMode)}
+className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300" >
+{isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+</button>
+</div>
 
           <nav className="flex flex-col gap-2">
             <SidebarButton
@@ -1243,15 +1198,16 @@ const App = () => {
         </main>
       </div>
     </div>
-  );
+
+);
 };
 
 // Data for sidebar
 const tabs = [
-  { id: "heart", label: "Cardiology", icon: Heart },
-  { id: "diabetes", label: "Endocrinology", icon: Activity },
-  { id: "lung", label: "Pulmonology", icon: Wind },
-  { id: "oncology", label: "Oncology", icon: ImageIcon },
+{ id: "heart", label: "Cardiology", icon: Heart },
+{ id: "diabetes", label: "Endocrinology", icon: Activity },
+{ id: "lung", label: "Pulmonology", icon: Wind },
+{ id: "oncology", label: "Oncology", icon: ImageIcon },
 ];
 
 export default App;
