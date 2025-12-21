@@ -24,11 +24,16 @@ import {
   Users,
   Clock,
   ArrowUpRight,
+  Bot,
+  Send,
+  FileText,
+  Download,
+  RotateCcw,
 } from "lucide-react";
 
 const App = () => {
   const [activeTab, setActiveTab] = useState("heart");
-  const [view, setView] = useState("diagnostic"); // 'diagnostic' or 'dashboard'
+  const [view, setView] = useState("diagnostic"); // 'diagnostic', 'dashboard', or 'agent'
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isPredicting, setIsPredicting] = useState(false);
   const [prediction, setPrediction] = useState(null);
@@ -38,6 +43,19 @@ const App = () => {
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+
+  // Agent / Chat States
+  const [chatMessages, setChatMessages] = useState([
+    {
+      role: "assistant",
+      content:
+        "Hello, I am your VitaCore AI Health Agent. How can I assist you today? Please describe your symptoms or health concerns.",
+    },
+  ]);
+  const [userInput, setUserInput] = useState("");
+  const [isChatting, setIsChatting] = useState(false);
+  const [generatedReport, setGeneratedReport] = useState(null);
+  const chatEndRef = useRef(null);
 
   // Imaging State
   const [selectedImage, setSelectedImage] = useState(null);
@@ -81,6 +99,12 @@ const App = () => {
     oncology: { scanType: "Lung Cancer X-Ray" },
   });
 
+  useEffect(() => {
+    if (view === "agent") {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages, view]);
+
   // --- Gemini API Helpers ---
 
   const callGemini = async (
@@ -91,6 +115,29 @@ const App = () => {
     const payload = {
       contents: [{ parts: [{ text: prompt }] }],
       systemInstruction: { parts: [{ text: systemInstruction }] },
+    };
+    return await executeGeminiRequest(url, payload);
+  };
+
+  const callGeminiChat = async (history, currentInput) => {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+    // Convert local state history to Gemini content format
+    const contents = history.map((msg) => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{ text: msg.content }],
+    }));
+    contents.push({ role: "user", parts: [{ text: currentInput }] });
+
+    const payload = {
+      contents,
+      systemInstruction: {
+        parts: [
+          {
+            text: "You are VitaCore AI, a professional health agent. Your goal is to converse with the user, understand their medical concerns, ask clarifying questions one at a time, and provide empathetic, high-level health guidance. Do not provide a final diagnosis, but offer helpful next steps.",
+          },
+        ],
+      },
     };
     return await executeGeminiRequest(url, payload);
   };
@@ -192,6 +239,60 @@ const App = () => {
   };
 
   // --- Handlers ---
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!userInput.trim() || isChatting) return;
+
+    const newMessages = [...chatMessages, { role: "user", content: userInput }];
+    setChatMessages(newMessages);
+    setUserInput("");
+    setIsChatting(true);
+
+    try {
+      const response = await callGeminiChat(chatMessages, userInput);
+      setChatMessages([
+        ...newMessages,
+        { role: "assistant", content: response },
+      ]);
+    } catch (err) {
+      setErrorMessage("Chatbot connection failed.");
+    } finally {
+      setIsChatting(false);
+    }
+  };
+
+  const generateReport = async () => {
+    setIsAiProcessing(true);
+    const conversation = chatMessages
+      .map((m) => `${m.role}: ${m.content}`)
+      .join("\n");
+    const prompt = `Based on the following medical conversation, generate a professional Health Assessment Report. 
+    Include: 1. Patient Concerns, 2. AI Observations, 3. Suggested Next Steps. 
+    Format it cleanly with headers. Conversation:\n${conversation}`;
+
+    try {
+      const result = await callGemini(
+        prompt,
+        "You are a medical reporting officer."
+      );
+      setGeneratedReport(result);
+    } catch (err) {
+      setErrorMessage("Report generation failed.");
+    } finally {
+      setIsAiProcessing(false);
+    }
+  };
+
+  const downloadReport = () => {
+    if (!generatedReport) return;
+    const element = document.createElement("a");
+    const file = new Blob([generatedReport], { type: "text/plain" });
+    element.href = URL.createObjectURL(file);
+    element.download = "VitaCore_Health_Report.txt";
+    document.body.appendChild(element);
+    element.click();
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -633,6 +734,177 @@ const App = () => {
     );
   };
 
+  const renderAgent = () => {
+    return (
+      <div className="animate-in fade-in slide-in-from-right-12 duration-700 flex flex-col h-[calc(100vh-10rem)]">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div>
+            <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              AI Health Agent
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">
+              Conversational analysis & report generation.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setChatMessages([
+                  {
+                    role: "assistant",
+                    content: "Session reset. How can I help you?",
+                  },
+                ]);
+                setGeneratedReport(null);
+              }}
+              className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-200 transition-all"
+            >
+              <RotateCcw size={16} />
+              Reset
+            </button>
+            <button
+              onClick={generateReport}
+              disabled={isAiProcessing || chatMessages.length < 3}
+              className="px-6 py-2.5 bg-violet-600 text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:bg-violet-700 transition-all disabled:opacity-50"
+            >
+              {isAiProcessing ? (
+                <Loader2 className="animate-spin" size={16} />
+              ) : (
+                <FileText size={16} />
+              )}
+              Generate Report
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-0">
+          {/* Chat Interface */}
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl flex flex-col overflow-hidden">
+            <div className="p-6 border-b dark:border-slate-800 flex items-center gap-3">
+              <div className="w-10 h-10 bg-violet-100 dark:bg-violet-900/50 rounded-full flex items-center justify-center text-violet-600">
+                <Bot size={24} />
+              </div>
+              <div>
+                <p className="text-sm font-black dark:text-white">
+                  VitaCore Bot
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Always Listening
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {chatMessages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[85%] p-5 rounded-[1.8rem] text-sm font-medium leading-relaxed ${
+                      msg.role === "user"
+                        ? "bg-violet-600 text-white rounded-tr-none"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-tl-none"
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {isChatting && (
+                <div className="flex justify-start">
+                  <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-[1.5rem] flex gap-1">
+                    <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-1 h-1 bg-slate-400 rounded-full animate-bounce" />
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            <form
+              onSubmit={handleSendMessage}
+              className="p-4 bg-slate-50 dark:bg-slate-900 border-t dark:border-slate-800"
+            >
+              <div className="relative">
+                <input
+                  type="text"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  placeholder="Type your health concern..."
+                  className="w-full pl-6 pr-14 py-4 bg-white dark:bg-slate-800 rounded-2xl border-none shadow-inner focus:ring-2 focus:ring-violet-500 outline-none dark:text-white"
+                />
+                <button
+                  type="submit"
+                  disabled={!userInput.trim() || isChatting}
+                  className="absolute right-2 top-2 p-3 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-all disabled:opacity-30"
+                >
+                  <Send size={18} />
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Report Area */}
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col">
+            <div className="p-6 border-b dark:border-slate-800 flex justify-between items-center">
+              <h3 className="font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest">
+                Report Center
+              </h3>
+              {generatedReport && (
+                <button
+                  onClick={downloadReport}
+                  className="p-2 text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg transition-all"
+                >
+                  <Download size={20} />
+                </button>
+              )}
+            </div>
+            <div className="flex-1 p-6 overflow-y-auto">
+              {generatedReport ? (
+                <div className="prose prose-slate dark:prose-invert max-w-none">
+                  <div className="whitespace-pre-line text-slate-600 dark:text-slate-400 text-sm leading-loose">
+                    {generatedReport}
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                  <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-300 dark:text-slate-600 mb-4">
+                    <FileText size={32} />
+                  </div>
+                  <p className="text-slate-400 font-bold text-sm">
+                    No report generated yet.
+                  </p>
+                  <p className="text-[10px] text-slate-300 mt-1">
+                    Converse with the agent for at least 3 turns to enable
+                    analysis.
+                  </p>
+                </div>
+              )}
+            </div>
+            {generatedReport && (
+              <div className="p-6 bg-slate-50 dark:bg-slate-800/50">
+                <button
+                  onClick={downloadReport}
+                  className="w-full py-4 bg-slate-900 dark:bg-violet-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                >
+                  <Download size={18} />
+                  Download PDF (.txt)
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div
       className={`min-h-screen transition-colors duration-500 ${
@@ -677,6 +949,26 @@ const App = () => {
                 <ScanSearch size={18} />
               </div>
               Clinical Suite
+            </button>
+
+            <button
+              onClick={() => setView("agent")}
+              className={`flex items-center gap-4 p-4 rounded-[1.25rem] transition-all font-bold text-sm ${
+                view === "agent"
+                  ? "bg-violet-50 dark:bg-violet-950/20 text-violet-600 dark:text-violet-400"
+                  : "text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              }`}
+            >
+              <div
+                className={`p-2 rounded-xl shadow-sm ${
+                  view === "agent"
+                    ? "bg-white dark:bg-slate-900"
+                    : "bg-white dark:bg-slate-900"
+                }`}
+              >
+                <Bot size={18} />
+              </div>
+              AI Health Agent
             </button>
 
             <div className="h-px bg-slate-100 dark:bg-slate-800 mx-4 my-2" />
@@ -753,6 +1045,8 @@ const App = () => {
           <div className="max-w-4xl mx-auto">
             {view === "dashboard" ? (
               renderDashboard()
+            ) : view === "agent" ? (
+              renderAgent()
             ) : (
               <div className="animate-in fade-in duration-500">
                 <div className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
