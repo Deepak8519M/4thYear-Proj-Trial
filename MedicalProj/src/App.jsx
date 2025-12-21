@@ -35,7 +35,7 @@ const App = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
 
-  const apiKey = ""; // Provided at runtime
+  const apiKey = "AIzaSyCXScRtm96rR5iqrnZ_xmQcXeptRNoVcro"; // Provided at runtime
 
   // Form states for each disease type
   const [formData, setFormData] = useState({
