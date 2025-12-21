@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 
 // --- Constants ---
-const API_KEY = ""; // Provided at runtime
+const API_KEY = "AIzaSyCXScRtm96rR5iqrnZ_xmQcXeptRNoVcro"; // Provided at runtime
 const MODEL_TEXT = "gemini-2.5-flash-preview-09-2025";
 const MODEL_TTS = "gemini-2.5-flash-preview-tts";
 
