@@ -1,31 +1,31 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
-  User,
-  UserPlus,
-  Calendar,
-  Clock,
-  CreditCard,
-  CheckCircle,
-  ChevronRight,
-  ChevronLeft,
-  Stethoscope,
-  Plus,
-  Search,
-  Settings,
-  ShieldCheck,
-  MapPin,
-  Star,
-  Mail,
-  Loader2,
-  Trash2,
-  Video,
-  Filter,
-  TrendingUp,
-  XCircle,
-  RefreshCw,
-  Send,
-  ExternalLink,
-  Lock,
+User,
+UserPlus,
+Calendar,
+Clock,
+CreditCard,
+CheckCircle,
+ChevronRight,
+ChevronLeft,
+Stethoscope,
+Plus,
+Search,
+Settings,
+ShieldCheck,
+MapPin,
+Star,
+Mail,
+Loader2,
+Trash2,
+Video,
+Filter,
+TrendingUp,
+XCircle,
+RefreshCw,
+Send,
+ExternalLink,
+Lock,
 } from "lucide-react";
 
 // --- Configuration & Constants ---
@@ -33,98 +33,177 @@ const APP_ID = "healthsync-pro-v1";
 const API_KEY = ""; // Environment provides this
 
 const SPECIALTIES = [
-  "All Specialties",
-  "Cardiologist",
-  "Dermatologist",
-  "Neurologist",
-  "Pediatrician",
-  "General Physician",
-  "Psychiatrist",
+"All Specialties",
+"Cardiologist",
+"Dermatologist",
+"Neurologist",
+"Pediatrician",
+"General Physician",
+"Psychiatrist",
 ];
 
 const TIME_SLOTS = [
-  "09:00 AM",
-  "10:00 AM",
-  "11:00 AM",
-  "01:00 PM",
-  "02:00 PM",
-  "03:00 PM",
-  "04:00 PM",
+"09:00 AM",
+"10:00 AM",
+"11:00 AM",
+"01:00 PM",
+"02:00 PM",
+"03:00 PM",
+"04:00 PM",
 ];
 
 const DEFAULT_DOCTORS = [
-  {
-    id: "d1",
-    name: "Dr. Sarah Mitchell",
-    specialty: "Cardiologist",
-    experience: "12 years",
-    rating: 4.9,
-    fee: 150,
-    about:
-      "Specializing in preventive cardiology and heart health management. Dr. Mitchell has published over 30 research papers on cardiovascular health.",
-    availability: ["Monday", "Wednesday", "Friday"],
-    hasVideo: true,
-    image:
-      "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=200&h=200",
-  },
-  {
-    id: "d2",
-    name: "Dr. James Wilson",
-    specialty: "Dermatologist",
-    experience: "8 years",
-    rating: 4.7,
-    fee: 120,
-    about:
-      "Expert in clinical dermatology and skin cancer screening. Former head of dermatology at Westside General Hospital.",
-    availability: ["Tuesday", "Thursday", "Saturday"],
-    hasVideo: false,
-    image:
-      "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200&h=200",
-  },
+{
+id: "d1",
+name: "Dr. Sarah Mitchell",
+specialty: "Cardiologist",
+experience: "12 years",
+rating: 4.9,
+fee: 150,
+about:
+"Specializing in preventive cardiology and heart health management. Dr. Mitchell has published over 30 research papers on cardiovascular health.",
+availability: ["Monday", "Wednesday", "Friday"],
+hasVideo: true,
+image:
+"https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=200&h=200",
+},
+{
+id: "d2",
+name: "Dr. James Wilson",
+specialty: "Dermatologist",
+experience: "8 years",
+rating: 4.7,
+fee: 120,
+about:
+"Expert in clinical dermatology and skin cancer screening. Former head of dermatology at Westside General Hospital.",
+availability: ["Tuesday", "Thursday", "Saturday"],
+hasVideo: false,
+image:
+"https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200&h=200",
+},
 ];
+
+// --- Confetti Celebration Component ---
+function Confetti() {
+const canvasRef = useRef(null);
+
+useEffect(() => {
+const canvas = canvasRef.current;
+const ctx = canvas.getContext("2d");
+let animationId;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const pieces = [];
+    const numberOfPieces = 150;
+    const colors = ["#3b82f6", "#60a5fa", "#1d4ed8", "#93c5fd", "#ffffff"];
+
+    class Piece {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height - canvas.height;
+        this.rotation = Math.random() * 360;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.diameter = Math.random() * 8 + 4;
+        this.speed = Math.random() * 3 + 2;
+        this.v = {
+            x: Math.random() * 2 - 1,
+            y: this.speed
+        };
+      }
+
+      update() {
+        this.y += this.v.y;
+        this.x += this.v.x;
+        this.rotation += this.speed;
+        if (this.y > canvas.height) {
+          this.y = -20;
+          this.x = Math.random() * canvas.width;
+        }
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate((this.rotation * Math.PI) / 180);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.diameter / 2, -this.diameter / 2, this.diameter, this.diameter);
+        ctx.restore();
+      }
+    }
+
+    for (let i = 0; i < numberOfPieces; i++) {
+      pieces.push(new Piece());
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach((p) => {
+        p.update();
+        p.draw();
+      });
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    const timeout = setTimeout(() => {
+        cancelAnimationFrame(animationId);
+    }, 4000);
+
+    return () => {
+        cancelAnimationFrame(animationId);
+        clearTimeout(timeout);
+    };
+
+}, []);
+
+return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[300]" />;
+}
 
 // --- Main Application ---
 export default function App() {
-  const [view, setView] = useState("patient");
-  const [doctors, setDoctors] = useState(() => {
-    const saved = localStorage.getItem(`${APP_ID}_doctors`);
-    return saved ? JSON.parse(saved) : DEFAULT_DOCTORS;
-  });
+const [view, setView] = useState("patient");
+const [doctors, setDoctors] = useState(() => {
+const saved = localStorage.getItem(`${APP_ID}_doctors`);
+return saved ? JSON.parse(saved) : DEFAULT_DOCTORS;
+});
 
-  const [appointments, setAppointments] = useState(() => {
-    const saved = localStorage.getItem(`${APP_ID}_appointments`);
-    return saved ? JSON.parse(saved) : [];
-  });
+const [appointments, setAppointments] = useState(() => {
+const saved = localStorage.getItem(`${APP_ID}_appointments`);
+return saved ? JSON.parse(saved) : [];
+});
 
-  const [bookingStep, setBookingStep] = useState(0);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [emailData, setEmailData] = useState({ subject: "", body: "" });
-  const [bookingDetails, setBookingDetails] = useState({
-    date: "",
-    time: "",
-    patientName: "",
-    patientEmail: "",
-    isTelehealth: false,
-  });
+const [bookingStep, setBookingStep] = useState(0);
+const [selectedDoctor, setSelectedDoctor] = useState(null);
+const [isProcessing, setIsProcessing] = useState(false);
+const [emailData, setEmailData] = useState({ subject: "", body: "" });
+const [bookingDetails, setBookingDetails] = useState({
+date: "",
+time: "",
+patientName: "",
+patientEmail: "",
+isTelehealth: false,
+});
 
-  // Sync to LocalStorage
-  useEffect(() => {
-    localStorage.setItem(`${APP_ID}_doctors`, JSON.stringify(doctors));
-  }, [doctors]);
+// Sync to LocalStorage
+useEffect(() => {
+localStorage.setItem(`${APP_ID}_doctors`, JSON.stringify(doctors));
+}, [doctors]);
 
-  useEffect(() => {
-    localStorage.setItem(
-      `${APP_ID}_appointments`,
-      JSON.stringify(appointments)
-    );
-  }, [appointments]);
+useEffect(() => {
+localStorage.setItem(
+`${APP_ID}_appointments`,
+JSON.stringify(appointments)
+);
+}, [appointments]);
 
-  // --- AI Integrations ---
+// --- AI Integrations ---
 
-  const generateDoctorImage = async (name, specialty) => {
-    try {
-      const prompt = `Professional studio headshot of a friendly medical doctor named ${name}, who is a ${specialty}. High quality, white background, realistic, wearing a white coat and stethoscope, looking at camera.`;
+const generateDoctorImage = async (name, specialty) => {
+try {
+const prompt = `Professional studio headshot of a friendly medical doctor named ${name}, who is a ${specialty}. High quality, white background, realistic, wearing a white coat and stethoscope, looking at camera.`;
 
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${API_KEY}`,
@@ -143,10 +222,11 @@ export default function App() {
     } catch (err) {
       return "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=200&h=200";
     }
-  };
 
-  const generateEmail = async (details, doctor) => {
-    const prompt = `Generate a professional and friendly appointment confirmation email. 
+};
+
+const generateEmail = async (details, doctor) => {
+const prompt = `Generate a professional and friendly appointment confirmation email. 
       Patient: ${details.patientName}. Doctor: ${doctor.name} (${
       doctor.specialty
     }). 
@@ -197,27 +277,26 @@ export default function App() {
 
     const result = await fetchWithRetry();
     setEmailData(result);
-  };
 
-  // --- Handlers ---
-  const handleAddDoctor = async (newDoc) => {
-    setIsProcessing(true);
-    const portrait = await generateDoctorImage(newDoc.name, newDoc.specialty);
-    const docWithMeta = {
-      ...newDoc,
-      id: `d-${Date.now()}`,
-      rating: 5.0,
-      image: portrait,
-      availability: newDoc.availability.split(",").map((s) => s.trim()),
-    };
-    setDoctors([...doctors, docWithMeta]);
-    setIsProcessing(false);
-  };
+};
 
-  const confirmBooking = async () => {
-    // Transition to success state immediately for UX "speed"
-    // while processing the AI email in the background or during a very short loader
-    setIsProcessing(true);
+// --- Handlers ---
+const handleAddDoctor = async (newDoc) => {
+setIsProcessing(true);
+const portrait = await generateDoctorImage(newDoc.name, newDoc.specialty);
+const docWithMeta = {
+...newDoc,
+id: `d-${Date.now()}`,
+rating: 5.0,
+image: portrait,
+availability: newDoc.availability.split(",").map((s) => s.trim()),
+};
+setDoctors([...doctors, docWithMeta]);
+setIsProcessing(false);
+};
+
+const confirmBooking = async () => {
+setIsProcessing(true);
 
     const newApt = {
       id: `apt-${Date.now()}`,
@@ -229,38 +308,39 @@ export default function App() {
 
     // Simulate quick bank verification
     setTimeout(async () => {
-      setAppointments([...appointments, newApt]);
-      setBookingStep(4);
-      setIsProcessing(false);
-      // Background task
-      await generateEmail(bookingDetails, selectedDoctor);
+        setAppointments([...appointments, newApt]);
+        setBookingStep(4);
+        setIsProcessing(false);
+        // Background task
+        await generateEmail(bookingDetails, selectedDoctor);
     }, 1200);
-  };
 
-  const updateAptStatus = (id, newStatus) => {
-    setAppointments(
-      appointments.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
-    );
-  };
+};
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100">
-      {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-[100]">
-        <div className="max-w-7xl mx-auto px-4 h-18 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-              <Stethoscope size={24} />
-            </div>
-            <div>
-              <span className="text-xl font-black tracking-tight text-slate-800">
-                HealthSync
-              </span>
-              <span className="block text-[10px] font-bold text-blue-600 uppercase tracking-widest leading-none">
-                Pro Edition
-              </span>
-            </div>
-          </div>
+const updateAptStatus = (id, newStatus) => {
+setAppointments(
+appointments.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+);
+};
+
+return (
+<div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100">
+{/_ Navigation _/}
+<nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-[100]">
+<div className="max-w-7xl mx-auto px-4 h-18 flex items-center justify-between">
+<div className="flex items-center gap-3">
+<div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+<Stethoscope size={24} />
+</div>
+<div>
+<span className="text-xl font-black tracking-tight text-slate-800">
+HealthSync
+</span>
+<span className="block text-[10px] font-bold text-blue-600 uppercase tracking-widest leading-none">
+Pro Edition
+</span>
+</div>
+</div>
 
           <div className="flex bg-slate-100 rounded-2xl p-1.5 border border-slate-200">
             <button
@@ -334,31 +414,29 @@ export default function App() {
         </div>
       )}
     </div>
-  );
+
+);
 }
 
 // --- Component: Credit Card Visual ---
 function VisualCard({ cardNumber, cardName, expiry, cvv }) {
-  const formattedNumber = (cardNumber || "•••• •••• •••• ••••")
-    .padEnd(16, "•")
-    .replace(/(.{4})/g, "$1 ")
-    .trim();
+const formattedNumber = (cardNumber || "•••• •••• •••• ••••")
+.padEnd(16, "•")
+.replace(/(.{4})/g, "$1 ")
+.trim();
 
-  return (
-    <div className="relative w-full aspect-[1.6/1] rounded-[1.5rem] bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 p-6 text-white shadow-2xl shadow-blue-900/20 overflow-hidden flex flex-col justify-between group transition-all duration-500">
-      {/* Decorative patterns */}
-      <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-white/10 transition-colors" />
-      <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500/10 rounded-full -ml-20 -mb-20 blur-3xl group-hover:bg-blue-500/20 transition-colors" />
+return (
+<div className="relative w-full aspect-[1.6/1] rounded-[1.5rem] bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 p-6 text-white shadow-2xl shadow-blue-900/20 overflow-hidden flex flex-col justify-between group transition-all duration-500">
+<div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-white/10 transition-colors" />
+<div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500/10 rounded-full -ml-20 -mb-20 blur-3xl group-hover:bg-blue-500/20 transition-colors" />
 
       <div className="flex justify-between items-start">
         <div className="w-12 h-10 bg-gradient-to-r from-yellow-400 to-yellow-200 rounded-lg flex flex-col justify-center gap-1 p-2">
-          <div className="h-[2px] w-full bg-slate-800/20" />
-          <div className="h-[2px] w-full bg-slate-800/20" />
-          <div className="h-[2px] w-full bg-slate-800/20" />
+            <div className="h-[2px] w-full bg-slate-800/20" />
+            <div className="h-[2px] w-full bg-slate-800/20" />
+            <div className="h-[2px] w-full bg-slate-800/20" />
         </div>
-        <div className="font-black italic text-xl tracking-tighter opacity-50">
-          VISA
-        </div>
+        <div className="font-black italic text-xl tracking-tighter opacity-50">VISA</div>
       </div>
 
       <div className="space-y-4">
@@ -368,86 +446,78 @@ function VisualCard({ cardNumber, cardName, expiry, cvv }) {
 
         <div className="flex justify-between items-end">
           <div className="space-y-1">
-            <span className="text-[8px] uppercase font-bold tracking-[0.2em] opacity-50">
-              Card Holder
-            </span>
+            <span className="text-[8px] uppercase font-bold tracking-[0.2em] opacity-50">Card Holder</span>
             <p className="text-sm font-bold uppercase truncate max-w-[150px]">
               {cardName || "YOUR NAME"}
             </p>
           </div>
           <div className="space-y-1 text-right">
-            <span className="text-[8px] uppercase font-bold tracking-[0.2em] opacity-50">
-              Expires
-            </span>
+            <span className="text-[8px] uppercase font-bold tracking-[0.2em] opacity-50">Expires</span>
             <p className="text-sm font-bold">{expiry || "MM/YY"}</p>
           </div>
         </div>
       </div>
     </div>
-  );
+
+);
 }
 
 // --- Component: Patient Portal ---
 function PatientPortal({
-  doctors,
-  step,
-  setStep,
-  selectedDoctor,
-  setSelectedDoctor,
-  details,
-  setDetails,
-  onConfirm,
-  isProcessing,
-  emailData,
+doctors,
+step,
+setStep,
+selectedDoctor,
+setSelectedDoctor,
+details,
+setDetails,
+onConfirm,
+isProcessing,
+emailData,
 }) {
-  const [search, setSearch] = useState("");
-  const [specialtyFilter, setSpecialtyFilter] = useState("All Specialties");
+const [search, setSearch] = useState("");
+const [specialtyFilter, setSpecialtyFilter] = useState("All Specialties");
 
-  // Card Info State
-  const [cardInfo, setCardInfo] = useState({
-    number: "",
-    name: "",
-    expiry: "",
-    cvv: "",
-  });
+const [cardInfo, setCardInfo] = useState({
+number: "",
+name: "",
+expiry: "",
+cvv: "",
+});
 
-  const filteredDoctors = useMemo(() => {
-    return doctors.filter((doc) => {
-      const matchesSearch =
-        doc.name.toLowerCase().includes(search.toLowerCase()) ||
-        doc.specialty.toLowerCase().includes(search.toLowerCase());
-      const matchesSpecialty =
-        specialtyFilter === "All Specialties" ||
-        doc.specialty === specialtyFilter;
-      return matchesSearch && matchesSpecialty;
-    });
-  }, [doctors, search, specialtyFilter]);
+const filteredDoctors = useMemo(() => {
+return doctors.filter((doc) => {
+const matchesSearch =
+doc.name.toLowerCase().includes(search.toLowerCase()) ||
+doc.specialty.toLowerCase().includes(search.toLowerCase());
+const matchesSpecialty =
+specialtyFilter === "All Specialties" ||
+doc.specialty === specialtyFilter;
+return matchesSearch && matchesSpecialty;
+});
+}, [doctors, search, specialtyFilter]);
 
-  const sendRealEmail = () => {
-    const subject = encodeURIComponent(emailData.subject);
-    const body = encodeURIComponent(emailData.body);
-    window.location.href = `mailto:${details.patientEmail}?subject=${subject}&body=${body}`;
-  };
+const sendRealEmail = () => {
+const subject = encodeURIComponent(emailData.subject);
+const body = encodeURIComponent(emailData.body);
+window.location.href = `mailto:${details.patientEmail}?subject=${subject}&body=${body}`;
+};
 
-  const isCardValid =
-    cardInfo.number.length >= 16 &&
-    cardInfo.name &&
-    cardInfo.expiry.length >= 4 &&
-    cardInfo.cvv.length >= 3;
+const isCardValid = cardInfo.number.length >= 16 && cardInfo.name && cardInfo.expiry.length >= 4 && cardInfo.cvv.length >= 3;
 
-  if (step === 0)
-    return (
-      <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
-        <div className="text-center max-w-3xl mx-auto space-y-4">
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-            Find and book the{" "}
-            <span className="text-blue-600">best healthcare</span> providers.
-          </h1>
-          <p className="text-lg text-slate-500 font-medium">
-            Access world-class doctors for in-person or video consultations,
-            instantly.
-          </p>
-        </div>
+if (step === 0)
+return (
+<div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
+<div className="text-center max-w-3xl mx-auto space-y-4">
+<h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+Find and book the{" "}
+<span className="text-blue-600">best healthcare</span> providers.
+</h1>
+<p className="text-lg text-slate-500 font-medium">
+Access world-class doctors for in-person or video consultations,
+instantly.
+</p>
+</div>
 
         <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col md:flex-row gap-4 items-center">
           <div className="relative flex-1 w-full">
@@ -557,20 +627,19 @@ function PatientPortal({
       </div>
     );
 
-  return (
-    <div className="max-w-4xl mx-auto animate-in zoom-in-95 duration-500">
-      <div className="flex items-center gap-4 mb-10">
-        <button
-          onClick={() => setStep(step - 1)}
-          className="w-12 h-12 rounded-2xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-white transition-colors"
-        >
-          <ChevronLeft size={24} />
-        </button>
-        <div>
-          <h2 className="text-2xl font-black">Booking Appointment</h2>
-          <p className="text-sm font-medium text-slate-500">Step {step} of 4</p>
-        </div>
-      </div>
+return (
+<div className="max-w-4xl mx-auto animate-in zoom-in-95 duration-500 relative">
+<div className="flex items-center gap-4 mb-10">
+<button
+onClick={() => setStep(step - 1)}
+className="w-12 h-12 rounded-2xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-white transition-colors" >
+<ChevronLeft size={24} />
+</button>
+<div>
+<h2 className="text-2xl font-black">Booking Appointment</h2>
+<p className="text-sm font-medium text-slate-500">Step {step} of 4</p>
+</div>
+</div>
 
       <div className="grid lg:grid-cols-5 gap-10">
         <div className="lg:col-span-3 space-y-8">
@@ -699,87 +768,64 @@ function PatientPortal({
                   <CreditCard className="text-blue-600" /> Secure Checkout
                 </h3>
 
-                {/* Visual Card Component */}
                 <div className="perspective-[1000px]">
-                  <VisualCard
-                    cardNumber={cardInfo.number}
-                    cardName={cardInfo.name}
-                    expiry={cardInfo.expiry}
-                    cvv={cardInfo.cvv}
-                  />
+                    <VisualCard
+                        cardNumber={cardInfo.number}
+                        cardName={cardInfo.name}
+                        expiry={cardInfo.expiry}
+                        cvv={cardInfo.cvv}
+                    />
                 </div>
 
                 <div className="grid gap-4 mt-8">
-                  <div>
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      maxLength="16"
-                      placeholder="0000 0000 0000 0000"
-                      className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm"
-                      value={cardInfo.number}
-                      onChange={(e) =>
-                        setCardInfo({
-                          ...cardInfo,
-                          number: e.target.value.replace(/\D/g, ""),
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">
-                      Cardholder Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="FULL NAME"
-                      className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm uppercase"
-                      value={cardInfo.name}
-                      onChange={(e) =>
-                        setCardInfo({ ...cardInfo, name: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">
-                        Expiry Date
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="MM/YY"
-                        maxLength="5"
-                        className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm"
-                        value={cardInfo.expiry}
-                        onChange={(e) =>
-                          setCardInfo({ ...cardInfo, expiry: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">
-                        CVV
-                      </label>
-                      <div className="relative">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Card Number</label>
                         <input
-                          type="password"
-                          placeholder="•••"
-                          maxLength="3"
-                          className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm"
-                          value={cardInfo.cvv}
-                          onChange={(e) =>
-                            setCardInfo({ ...cardInfo, cvv: e.target.value })
-                          }
+                            type="text"
+                            maxLength="16"
+                            placeholder="0000 0000 0000 0000"
+                            className="w-full p-3 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm"
+                            value={cardInfo.number}
+                            onChange={(e) => setCardInfo({...cardInfo, number: e.target.value.replace(/\D/g, '')})}
                         />
-                        <Lock
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300"
-                          size={16}
-                        />
-                      </div>
                     </div>
-                  </div>
+                    <div>
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Cardholder Name</label>
+                        <input
+                            type="text"
+                            placeholder="FULL NAME"
+                            className="w-full p-3 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm uppercase"
+                            value={cardInfo.name}
+                            onChange={(e) => setCardInfo({...cardInfo, name: e.target.value})}
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Expiry Date</label>
+                            <input
+                                type="text"
+                                placeholder="MM/YY"
+                                maxLength="5"
+                                className="w-full p-3 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm"
+                                value={cardInfo.expiry}
+                                onChange={(e) => setCardInfo({...cardInfo, expiry: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">CVV</label>
+                            <div className="relative">
+                                <input
+                                    type="password"
+                                    placeholder="•••"
+                                    maxLength="3"
+                                    className="w-full p-3 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold transition-all text-sm"
+                                    value={cardInfo.cvv}
+                                    onChange={(e) => setCardInfo({...cardInfo, cvv: e.target.value})}
+                                />
+                                <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="bg-slate-50 p-6 rounded-3xl space-y-4">
@@ -804,20 +850,20 @@ function PatientPortal({
                   disabled={!isCardValid}
                   className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-2xl shadow-blue-200 disabled:opacity-30 disabled:cursor-not-allowed group flex items-center justify-center gap-3"
                 >
-                  Confirm & Pay{" "}
-                  <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                  Confirm & Pay <ChevronRight className="group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
             </div>
           )}
 
           {step === 4 && (
-            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/30 text-center space-y-8 animate-in zoom-in-90 duration-500">
+            <div className="relative z-[310] bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/30 text-center space-y-8 animate-in zoom-in-90 duration-500">
+              <Confetti />
               <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-xl shadow-green-100">
                 <CheckCircle size={40} />
               </div>
               <div>
-                <h3 className="text-3xl font-black mb-2">Schedule Booked!</h3>
+                <h3 className="text-3xl font-black mb-2 tracking-tight">Schedule Blocked!</h3>
                 <p className="text-slate-500 font-medium">
                   Your appointment is confirmed and added to our systems.
                 </p>
@@ -853,8 +899,7 @@ function PatientPortal({
                     Subject: {emailData.subject || "Generating confirmation..."}
                   </div>
                   <div className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-medium h-32 overflow-y-auto custom-scrollbar">
-                    {emailData.body ||
-                      "Please wait while our AI engine prepares your documentation..."}
+                    {emailData.body || "Please wait while our AI engine prepares your documentation..."}
                   </div>
                 </div>
               </div>
@@ -878,30 +923,27 @@ function PatientPortal({
               Doctor Summary
             </h4>
             {selectedDoctor && (
-              <div className="flex gap-4 items-center mb-6">
+                <div className="flex gap-4 items-center mb-6">
                 <img
-                  src={selectedDoctor.image}
-                  className="w-20 h-20 rounded-2xl object-cover shadow-lg"
-                  alt=""
+                    src={selectedDoctor.image}
+                    className="w-20 h-20 rounded-2xl object-cover shadow-lg"
+                    alt=""
                 />
                 <div>
-                  <p className="font-black text-lg leading-tight">
+                    <p className="font-black text-lg leading-tight">
                     {selectedDoctor.name}
-                  </p>
-                  <p className="text-xs font-bold text-blue-600 uppercase">
+                    </p>
+                    <p className="text-xs font-bold text-blue-600 uppercase">
                     {selectedDoctor.specialty}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Star
-                      size={12}
-                      className="text-yellow-500 fill-yellow-500"
-                    />
+                    </p>
+                    <div className="flex items-center gap-1 mt-1">
+                    <Star size={12} className="text-yellow-500 fill-yellow-500" />
                     <span className="text-xs font-black text-slate-400">
-                      {selectedDoctor.rating} (50+ reviews)
+                        {selectedDoctor.rating} (50+ reviews)
                     </span>
-                  </div>
+                    </div>
                 </div>
-              </div>
+                </div>
             )}
 
             <div className="space-y-4 pt-4 border-t border-slate-100">
@@ -924,60 +966,60 @@ function PatientPortal({
         </div>
       </div>
     </div>
-  );
+
+);
 }
 
 // --- Component: Admin Panel ---
 function AdminPanel({
-  doctors,
-  appointments,
-  onAdd,
-  onDelete,
-  onStatusChange,
-  isProcessing,
+doctors,
+appointments,
+onAdd,
+onDelete,
+onStatusChange,
+isProcessing,
 }) {
-  const [showAdd, setShowAdd] = useState(false);
-  const [newDoc, setNewDoc] = useState({
-    name: "",
-    specialty: "General Physician",
-    experience: "",
-    fee: "",
-    about: "",
-    availability: "",
-  });
+const [showAdd, setShowAdd] = useState(false);
+const [newDoc, setNewDoc] = useState({
+name: "",
+specialty: "General Physician",
+experience: "",
+fee: "",
+about: "",
+availability: "",
+});
 
-  const stats = useMemo(() => {
-    const totalRev = appointments
-      .filter((a) => a.status !== "Cancelled")
-      .reduce((acc, curr) => acc + (Number(curr.doctor.fee) + 10), 0);
-    const completed = appointments.filter(
-      (a) => a.status === "Completed"
-    ).length;
-    return {
-      totalRev,
-      completed,
-      pending: appointments.filter((a) => a.status === "Upcoming").length,
-    };
-  }, [appointments]);
+const stats = useMemo(() => {
+const totalRev = appointments
+.filter((a) => a.status !== "Cancelled")
+.reduce((acc, curr) => acc + (Number(curr.doctor.fee) + 10), 0);
+const completed = appointments.filter(
+(a) => a.status === "Completed"
+).length;
+return {
+totalRev,
+completed,
+pending: appointments.filter((a) => a.status === "Upcoming").length,
+};
+}, [appointments]);
 
-  return (
-    <div className="space-y-10 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight">
-            Executive Dashboard
-          </h1>
-          <p className="text-slate-500 font-medium">
-            Monitoring HealthSync system activities
-          </p>
-        </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
-        >
-          <Plus size={20} /> Add New Professional
-        </button>
-      </div>
+return (
+<div className="space-y-10 animate-in fade-in duration-500">
+<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div>
+<h1 className="text-3xl font-black tracking-tight">
+Executive Dashboard
+</h1>
+<p className="text-slate-500 font-medium">
+Monitoring HealthSync system activities
+</p>
+</div>
+<button
+onClick={() => setShowAdd(true)}
+className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200" >
+<Plus size={20} /> Add New Professional
+</button>
+</div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard
@@ -1149,17 +1191,17 @@ function AdminPanel({
       </div>
 
       {showAdd && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-xl p-10 shadow-2xl animate-in zoom-in-95 duration-300 relative">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2rem] w-full max-w-lg p-6 md:p-8 shadow-2xl animate-in zoom-in-95 duration-300 relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowAdd(false)}
-              className="absolute top-6 right-6 text-slate-400 hover:text-slate-900 transition-colors"
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-900 transition-colors"
             >
-              <XCircle size={28} />
+              <XCircle size={24} />
             </button>
-            <div className="mb-8">
-              <h2 className="text-2xl font-black">Register Professional</h2>
-              <p className="text-sm font-medium text-slate-500">
+            <div className="mb-6">
+              <h2 className="text-xl font-black">Register Professional</h2>
+              <p className="text-xs font-medium text-slate-500">
                 Adding a new specialist to the cloud directory.
               </p>
             </div>
@@ -1170,9 +1212,9 @@ function AdminPanel({
                 onAdd(newDoc);
                 setShowAdd(false);
               }}
-              className="space-y-5"
+              className="space-y-4"
             >
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <Input
                   label="Doctor Name"
                   placeholder="Dr. John Doe"
@@ -1180,12 +1222,12 @@ function AdminPanel({
                   onChange={(v) => setNewDoc({ ...newDoc, name: v })}
                   required
                 />
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                     Specialty
                   </label>
                   <select
-                    className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold text-sm transition-all cursor-pointer"
+                    className="w-full p-3 rounded-xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold text-xs transition-all cursor-pointer h-[46px]"
                     value={newDoc.specialty}
                     onChange={(e) =>
                       setNewDoc({ ...newDoc, specialty: e.target.value })
@@ -1201,7 +1243,7 @@ function AdminPanel({
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <Input
                   label="Experience"
                   placeholder="e.g. 10 years"
@@ -1222,12 +1264,12 @@ function AdminPanel({
                 value={newDoc.availability}
                 onChange={(v) => setNewDoc({ ...newDoc, availability: v })}
               />
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Biography
                 </label>
                 <textarea
-                  className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold text-sm transition-all h-24"
+                  className="w-full p-3 rounded-xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold text-xs transition-all h-20 resize-none"
                   value={newDoc.about}
                   onChange={(e) =>
                     setNewDoc({ ...newDoc, about: e.target.value })
@@ -1235,15 +1277,14 @@ function AdminPanel({
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-blue-50 text-blue-600 flex gap-3 text-xs font-bold leading-relaxed">
-                <ShieldCheck className="shrink-0" size={18} />
-                HealthSync AI will automatically generate a professional profile
-                portrait for this specialist once saved.
+              <div className="p-3 rounded-xl bg-blue-50 text-blue-600 flex gap-2.5 text-[10px] font-bold leading-relaxed border border-blue-100">
+                <ShieldCheck className="shrink-0" size={14} />
+                HealthSync AI will automatically generate a professional profile portrait.
               </div>
 
               <button
                 type="submit"
-                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-blue-600 transition-all shadow-xl shadow-slate-200"
+                className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-blue-600 transition-all shadow-xl shadow-slate-200"
               >
                 Onboard Specialist
               </button>
@@ -1252,49 +1293,49 @@ function AdminPanel({
         </div>
       )}
     </div>
-  );
+
+);
 }
 
 // --- Utility Components ---
 function StatCard({ label, value, icon, color }) {
-  return (
-    <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/30 flex items-center gap-4">
-      <div
-        className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color}`}
-      >
-        {React.cloneElement(icon, { size: 28 })}
-      </div>
-      <div>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
-          {label}
-        </p>
-        <p className="text-2xl font-black text-slate-900">{value}</p>
-      </div>
-    </div>
-  );
+return (
+<div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/30 flex items-center gap-4">
+<div
+className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color}`} >
+{React.cloneElement(icon, { size: 28 })}
+</div>
+<div>
+<p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+{label}
+</p>
+<p className="text-2xl font-black text-slate-900">{value}</p>
+</div>
+</div>
+);
 }
 
 function Input({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = "text",
-  required = false,
+label,
+value,
+onChange,
+placeholder,
+type = "text",
+required = false,
 }) {
-  return (
-    <div className="space-y-2">
-      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">
-        {label}
-      </label>
-      <input
-        type={type}
-        required={required}
-        placeholder={placeholder}
-        className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold text-sm transition-all"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </div>
-  );
+return (
+<div className="space-y-1.5 w-full">
+<label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+{label}
+</label>
+<input
+type={type}
+required={required}
+placeholder={placeholder}
+className="w-full p-3 rounded-xl bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none font-bold text-xs transition-all"
+value={value}
+onChange={(e) => onChange(e.target.value)}
+/>
+</div>
+);
 }
