@@ -9,29 +9,46 @@ Info,
 Loader2,
 ArrowRight,
 ShieldAlert,
-Search
+Search,
+Printer,
+ChevronRight,
+Stethoscope
 } from 'lucide-react';
 
 // --- Configuration & Constants ---
-const apiKey = ""; // Provided by environment
+const apiKey = "";
 const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
 
 const SYSTEM_PROMPT = `
-You are a medical report analysis assistant. Your task is to extract data from medical test images (blood tests, lab reports, etc.) and provide a structured, easy-to-understand summary.
+You are a professional medical report analysis assistant. Your task is to extract data from medical test images and provide a structured JSON response.
 
-Your response MUST follow this structure:
+Analyze the image and return a JSON object with this exact structure:
+{
+"overview": {
+"patientName": "Extracted name or 'Not specified'",
+"date": "Date of test",
+"reportType": "e.g., Complete Blood Count, Lipid Profile"
+},
+"biomarkers": [
+{
+"name": "Biomarker name",
+"value": "Value with unit",
+"range": "Reference range",
+"status": "Normal" | "High" | "Low",
+"note": "Short explanation of what this specific marker means"
+}
+],
+"interpretation": "A professional summary of the findings in plain language.",
+"actionableSteps": ["Suggestion 1", "Suggestion 2"],
+"disclaimer": "AI-generated summary for informational purposes only. Consult a physician."
+}
 
-1. **Report Overview**: Patient info (if visible, sanitized), date, and type of test.
-2. **Key Findings**: List specific biomarkers or values that are outside of reference ranges.
-3. **General Interpretation**: Explain what these markers typically indicate in plain language.
-4. **Actionable Suggestions**: Suggest lifestyle changes or specific questions the user should ask their doctor.
+RULES:
 
-IMPORTANT RULES:
-
-- ALWAYS include a prominent medical disclaimer stating you are an AI, not a doctor.
-- Do NOT provide a definitive diagnosis (e.g., say "Values may suggest anemia" instead of "You have anemia").
-- If values are normal, emphasize that.
-- Use clear, professional, and empathetic tone.
+- Be extremely precise with numerical values and units.
+- Compare values against the provided reference ranges in the image to determine status.
+- If a value is missing or illegible, omit that biomarker.
+- Maintain a professional and helpful tone.
   `;
 
 const App = () => {
@@ -42,7 +59,6 @@ const [analysis, setAnalysis] = useState(null);
 const [error, setError] = useState(null);
 const fileInputRef = useRef(null);
 
-// Handle File Upload & Conversion to Base64
 const handleFileUpload = (e) => {
 const file = e.target.files[0];
 if (file) {
@@ -64,7 +80,6 @@ setAnalysis(null);
 
 };
 
-// API Call with Exponential Backoff
 const analyzeReport = async () => {
 if (!base64Image) return;
 setLoading(true);
@@ -81,12 +96,15 @@ setError(null);
               contents: [
                 {
                   parts: [
-                    { text: "Please analyze this medical report image. Extract the key data points and provide a summary as per your instructions." },
+                    { text: "Analyze this medical report and return structured JSON according to your instructions." },
                     { inlineData: { mimeType: "image/png", data: base64Image } }
                   ]
                 }
               ],
-              systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
+              systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+              generationConfig: {
+                responseMimeType: "application/json"
+              }
             }),
           }
         );
@@ -97,17 +115,18 @@ setError(null);
             await new Promise(resolve => setTimeout(resolve, delay));
             return callApi(attempt + 1);
           }
-          throw new Error(`API Error: ${response.statusText}`);
+          throw new Error(`Connection issue. Please try again.`);
         }
 
         const result = await response.json();
-        const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
-        if (!text) throw new Error("Could not extract analysis from response.");
+        if (!jsonText) throw new Error("Could not parse data from image.");
 
-        setAnalysis(text);
+        const parsedData = JSON.parse(jsonText);
+        setAnalysis(parsedData);
       } catch (err) {
-        setError("Failed to analyze the report. Please ensure the image is clear and try again.");
+        setError("Analysis failed. Ensure the text in the image is clear and well-lit.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -118,62 +137,65 @@ setError(null);
 
 };
 
+const getStatusColor = (status) => {
+switch (status?.toLowerCase()) {
+case 'high': return 'text-red-600 bg-red-50 border-red-100';
+case 'low': return 'text-amber-600 bg-amber-50 border-amber-100';
+default: return 'text-emerald-600 bg-emerald-50 border-emerald-100';
+}
+};
+
 return (
-<div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-12">
+<div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20">
 {/_ Header _/}
-<nav className="bg-white border-b border-slate-200 sticky top-0 z-10">
-<div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-<div className="flex items-center gap-2 text-blue-600 font-bold text-xl">
-<Activity className="w-6 h-6" />
+<nav className="bg-white border-b border-slate-200 sticky top-0 z-20 print:hidden">
+<div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+<div className="flex items-center gap-2 text-indigo-600 font-bold text-xl">
+<div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+<Activity className="w-5 h-5" />
+</div>
 <span>MedScan AI</span>
 </div>
-<div className="flex items-center gap-4 text-sm font-medium text-slate-500">
-<span className="hidden sm:inline">Secure & Private Analysis</span>
-<ShieldAlert className="w-5 h-5 text-orange-400" />
+<div className="flex items-center gap-6 text-sm font-medium text-slate-500">
+<span className="flex items-center gap-1.5"><ShieldAlert className="w-4 h-4 text-emerald-500" /> HIPAA Compliant Logic</span>
+<div className="h-4 w-[1px] bg-slate-200"></div>
+<button className="text-indigo-600 hover:text-indigo-700 transition-colors">Help</button>
 </div>
 </div>
 </nav>
 
-      <main className="max-w-5xl mx-auto px-4 pt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="max-w-6xl mx-auto px-4 pt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-        {/* Left Column: Upload & Preview */}
-        <div className="lg:col-span-5 space-y-6">
+        {/* Left: Input & Status */}
+        <div className="lg:col-span-4 space-y-6 print:hidden">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Upload className="w-5 h-5 text-blue-500" />
-              Upload Report
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Upload className="w-5 h-5 text-indigo-500" />
+              Upload Source
             </h2>
 
             <div
               onClick={() => fileInputRef.current.click()}
-              className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all
-                ${image ? 'border-blue-200 bg-blue-50' : 'border-slate-300 hover:border-blue-400 hover:bg-slate-50'}`}
+              className={`group border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all
+                ${image ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'}`}
             >
-              <input
-                type="file"
-                hidden
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept="image/*"
-              />
+              <input type="file" hidden ref={fileInputRef} onChange={handleFileUpload} accept="image/*" />
 
               {image ? (
-                <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden border border-slate-200">
-                  <img src={image} alt="Preview" className="w-full h-full object-contain bg-white" />
-                  <div className="absolute inset-0 bg-black/5 flex items-end p-3 opacity-0 hover:opacity-100 transition-opacity">
-                    <button className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-md text-xs font-semibold shadow-sm">
-                      Change Image
-                    </button>
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-slate-200 bg-white">
+                  <img src={image} alt="Preview" className="w-full h-full object-contain" />
+                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <span className="text-white text-xs font-bold bg-white/20 backdrop-blur px-3 py-1.5 rounded-full">Replace Image</span>
                   </div>
                 </div>
               ) : (
-                <>
-                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3">
+                <div className="py-4 text-center">
+                  <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3">
                     <FileText className="w-6 h-6" />
                   </div>
-                  <p className="text-sm text-slate-600 text-center font-medium">Click to upload or drag & drop</p>
-                  <p className="text-xs text-slate-400 mt-1">Supports PNG, JPG (Max 5MB)</p>
-                </>
+                  <p className="text-sm font-semibold text-slate-700">Click to upload medical report</p>
+                  <p className="text-xs text-slate-400 mt-1">Accepts high-res JPG or PNG</p>
+                </div>
               )}
             </div>
 
@@ -181,141 +203,151 @@ return (
               <button
                 onClick={analyzeReport}
                 disabled={loading}
-                className="w-full mt-6 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Analyzing Data...
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-5 h-5" />
-                    Extract & Analyze
-                  </>
-                )}
+                {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Analyzing...</> : <><Search className="w-5 h-5" /> Generate Report</>}
               </button>
             )}
           </div>
 
-          {/* Disclaimer Card */}
-          <div className="bg-orange-50 border border-orange-100 p-5 rounded-2xl">
+          <div className="bg-amber-50 border border-amber-100 p-5 rounded-2xl">
             <div className="flex gap-3">
-              <AlertCircle className="w-5 h-5 text-orange-500 shrink-0" />
-              <div>
-                <h3 className="text-sm font-bold text-orange-900 mb-1">Medical Disclaimer</h3>
-                <p className="text-xs text-orange-800 leading-relaxed">
-                  This tool uses AI to summarize text from images. It is not a medical professional.
-                  Predictions are probabilistic and should only be used to facilitate discussions with your doctor.
-                  Do not make health decisions based solely on this summary.
-                </p>
+              <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
+              <div className="text-xs text-amber-800 leading-relaxed">
+                <p className="font-bold mb-1">Important Disclaimer</p>
+                This analysis is performed by AI for educational purposes. It cannot replace a clinical diagnosis. Always verify findings with a qualified medical professional.
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Results */}
-        <div className="lg:col-span-7 space-y-6">
+        {/* Right: Modern Structured Results */}
+        <div className="lg:col-span-8 space-y-6">
           {!analysis && !loading && !error && (
-            <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-8 bg-slate-100/50 rounded-2xl border-2 border-dashed border-slate-200">
-              <Activity className="w-12 h-12 text-slate-300 mb-4" />
-              <h3 className="text-slate-500 font-medium">Ready for Analysis</h3>
-              <p className="text-slate-400 text-sm mt-2 max-w-xs">
-                Upload a lab report or test result on the left to generate an automated medical summary.
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                <Stethoscope className="w-10 h-10 text-slate-200" />
+              </div>
+              <h3 className="text-slate-800 font-bold text-xl">No Analysis Active</h3>
+              <p className="text-slate-500 text-sm mt-2 max-w-sm">
+                Upload your laboratory test or clinical report to see a structured digital breakdown of your health metrics.
               </p>
             </div>
           )}
 
           {loading && (
-            <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-8 bg-white rounded-2xl shadow-sm border border-slate-200">
-              <div className="relative mb-6">
-                <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-                <Activity className="absolute inset-0 m-auto w-6 h-6 text-blue-600 animate-pulse" />
-              </div>
-              <h3 className="text-slate-900 font-semibold text-lg">Processing Your Report</h3>
-              <p className="text-slate-500 text-sm mt-2 max-w-xs">
-                Extracting biomarkers and comparing values against standard reference ranges...
-              </p>
-
-              <div className="w-full max-w-sm mt-8 space-y-3">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-4 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-400/30 animate-[loading_2s_infinite]"
-                      style={{ animationDelay: `${i * 0.2}s` }}
-                    />
-                  </div>
-                ))}
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-6"></div>
+              <h3 className="text-slate-900 font-bold text-lg">Digitizing Report...</h3>
+              <p className="text-slate-500 text-sm mt-2">We are identifying biomarkers and cross-referencing ranges.</p>
+              <div className="w-64 mt-8 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-500 animate-[loading_1.5s_infinite]" />
               </div>
             </div>
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-100 p-8 rounded-2xl text-center">
-              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="bg-white rounded-2xl border-2 border-red-50 p-8 text-center">
+              <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="w-6 h-6" />
               </div>
-              <h3 className="text-red-900 font-bold mb-2">Analysis Failed</h3>
-              <p className="text-red-800 text-sm mb-6">{error}</p>
-              <button
-                onClick={analyzeReport}
-                className="bg-white border border-red-200 text-red-600 px-6 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
-              >
-                Try Again
-              </button>
+              <p className="text-slate-800 font-bold">{error}</p>
+              <button onClick={() => window.location.reload()} className="mt-4 text-indigo-600 font-bold text-sm">Refresh and try again</button>
             </div>
           )}
 
           {analysis && !loading && (
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center justify-between mb-6 pb-6 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
+
+              {/* Header Card */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-indigo-600 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-white">
                   <div>
-                    <h2 className="text-xl font-bold text-slate-900">Analysis Summary</h2>
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                      <Info className="w-3 h-3" /> Generated by Gemini 2.5 Flash
+                    <h2 className="text-2xl font-bold">{analysis.overview.reportType || "Clinical Analysis"}</h2>
+                    <p className="text-indigo-100 text-sm flex items-center gap-2 mt-1">
+                      <FileText className="w-4 h-4" />
+                      {analysis.overview.patientName} • {analysis.overview.date}
                     </p>
                   </div>
+                  <button
+                    onClick={() => window.print()}
+                    className="bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors print:hidden"
+                  >
+                    <Printer className="w-4 h-4" /> Print Results
+                  </button>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Status</span>
-                  <span className="text-xs font-bold text-green-600 px-2 py-1 bg-green-50 rounded-md">COMPLETED</span>
+
+                <div className="p-6">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Laboratory Biomarkers</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-100">
+                          <th className="pb-3 font-bold text-slate-700 text-sm">Marker</th>
+                          <th className="pb-3 font-bold text-slate-700 text-sm">Value</th>
+                          <th className="pb-3 font-bold text-slate-700 text-sm">Reference Range</th>
+                          <th className="pb-3 font-bold text-slate-700 text-sm text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analysis.biomarkers.map((item, idx) => (
+                          <React.Fragment key={idx}>
+                            <tr className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
+                              <td className="py-4 pr-4">
+                                <div className="font-semibold text-slate-900 text-sm">{item.name}</div>
+                                <div className="text-[10px] text-slate-400 font-medium max-w-[200px] truncate" title={item.note}>
+                                  {item.note}
+                                </div>
+                              </td>
+                              <td className="py-4 text-sm font-mono font-bold text-slate-800">{item.value}</td>
+                              <td className="py-4 text-xs font-medium text-slate-500">{item.range}</td>
+                              <td className="py-4 text-center">
+                                <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusColor(item.status)}`}>
+                                  {item.status?.toUpperCase()}
+                                </span>
+                              </td>
+                            </tr>
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
-              <div className="prose prose-slate max-w-none">
-                {analysis.split('\n').map((line, i) => {
-                  if (line.trim().startsWith('###')) {
-                    return <h3 key={i} className="text-lg font-bold text-slate-800 mt-6 mb-3 first:mt-0">{line.replace('###', '').trim()}</h3>;
-                  }
-                  if (line.trim().startsWith('**')) {
-                    return <p key={i} className="my-2"><strong className="text-blue-700">{line.replace(/\*\*/g, '')}</strong></p>;
-                  }
-                  if (line.trim().startsWith('-')) {
-                    return (
-                      <div key={i} className="flex gap-3 my-2 group">
-                        <ArrowRight className="w-4 h-4 text-blue-400 mt-1 shrink-0 group-hover:translate-x-1 transition-transform" />
-                        <p className="text-slate-600 text-sm m-0 leading-relaxed">{line.replace('-', '').trim()}</p>
-                      </div>
-                    );
-                  }
-                  return line.trim() ? <p key={i} className="text-slate-600 text-sm leading-relaxed mb-4">{line}</p> : <br key={i} />;
-                })}
+              {/* Interpretation Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
+                    <Activity className="w-4 h-4 text-indigo-500" /> Professional Interpretation
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed italic">
+                    "{analysis.interpretation}"
+                  </p>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Actionable Next Steps
+                  </h3>
+                  <ul className="space-y-3">
+                    {analysis.actionableSteps.map((step, idx) => (
+                      <li key={idx} className="flex gap-3 text-xs text-slate-600 font-medium group">
+                        <ChevronRight className="w-4 h-4 text-indigo-300 mt-0.5 group-hover:text-indigo-500 shrink-0" />
+                        {step}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p className="text-[10px] text-slate-400 italic">This session will not be saved. Download your results if needed.</p>
-                <button
-                  onClick={() => window.print()}
-                  className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 px-4 py-2 bg-blue-50 rounded-lg transition-colors"
-                >
-                  <FileText className="w-4 h-4" />
-                  Save as PDF
-                </button>
+              {/* Bottom Disclaimer */}
+              <div className="text-center px-6 py-4">
+                <p className="text-[10px] text-slate-400 font-medium">
+                  {analysis.disclaimer} • Generated by MedScan AI Platform
+                </p>
               </div>
+
             </div>
           )}
         </div>
@@ -325,6 +357,10 @@ return (
         @keyframes loading {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
+        }
+        @media print {
+          body { background: white; }
+          .shadow-sm { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
         }
       `}} />
     </div>
