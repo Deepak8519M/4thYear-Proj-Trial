@@ -124,7 +124,7 @@ document.body.appendChild(script);
 return () => { if (document.body.contains(script)) document.body.removeChild(script); };
 }, []);
 
-// Optimized Speech Recognition with Double-Send Prevention
+// Optimized Speech Recognition
 useEffect(() => {
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (SpeechRecognition && !recognitionRef.current) {
@@ -146,7 +146,6 @@ recognition.lang = 'en-US';
           if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
 
           silenceTimerRef.current = setTimeout(() => {
-            // Check processing ref to avoid double-sends
             if (currentTranscript.trim() && !isProcessingRef.current) {
               handleSend(currentTranscript.trim());
               recognition.stop();
@@ -219,7 +218,7 @@ setVoiceEnabled(true);
 setError(null);
 
       const lastBotMsg = messages.filter(m => m.role === 'bot').pop();
-      const greeting = lastBotMsg ? lastBotMsg.text : "Hello. I am MediFlow. Please tell me your full name and age.";
+      const greeting = lastBotMsg ? lastBotMsg.text : "Hello. I am MediFlow. Please provide your full name and age.";
       callGeminiTTS(greeting);
     }
 
@@ -268,7 +267,6 @@ if (!textToSend || isProcessingRef.current || loading) return;
     const userMsg = { role: 'user', text: textToSend };
     setInput('');
 
-    // STEP 1: Add user message immediately
     setChats(prev => prev.map(chat =>
       chat.id === activeChatId ? { ...chat, messages: [...chat.messages, userMsg] } : chat
     ));
@@ -294,7 +292,6 @@ if (!textToSend || isProcessingRef.current || loading) return;
       const rawAiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't process that.";
       const aiText = rawAiText.replace(/\*/g, '');
 
-      // STEP 2: Only append the bot message
       setChats(prev => prev.map(chat =>
         chat.id === activeChatId ? { ...chat, messages: [...chat.messages, { role: 'bot', text: aiText }] } : chat
       ));
@@ -368,7 +365,54 @@ setError(null);
 
 };
 
+const downloadAsImage = () => {
+if (!reportRef.current || !window.html2canvas) return;
+
+    const element = reportRef.current;
+
+    // Improved capture logic to ensure full content is rendered
+    window.html2canvas(element, {
+      backgroundColor: "#ffffff",
+      scale: 2, // High resolution
+      useCORS: true,
+      scrollY: 0,
+      windowHeight: element.scrollHeight,
+      height: element.scrollHeight,
+      width: element.offsetWidth,
+      onclone: (clonedDoc) => {
+        // Ensure cloned element is fully visible for capture
+        const clonedReport = clonedDoc.getElementById('clinical-report-container');
+        if (clonedReport) {
+          clonedReport.style.height = 'auto';
+          clonedReport.style.overflow = 'visible';
+          clonedReport.style.maxHeight = 'none';
+        }
+      }
+    }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = `MediFlow_Report_${reportData?.patientName || 'Patient'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }).catch(err => {
+      console.error("Export failed", err);
+      setError("Failed to export image. Please try again.");
+    });
+
+};
+
+const downloadAsText = () => {
+if (!reportData) return;
+const separator = "=".repeat(50);
+const content = `MEDIFLOW ASSESSMENT\nName: ${reportData.patientName}\nAge: ${reportData.patientAge}\nSummary: ${reportData.symptomSummary}\nObs: ${reportData.observations.join(', ')}\nPre: ${reportData.precautions.join(', ')}`;
+const blob = new Blob([content], { type: 'text/plain' });
+const link = document.createElement('a');
+link.download = `MediFlow_Report_${reportData.patientName}.txt`;
+link.href = URL.createObjectURL(blob);
+link.click();
+};
+
 return (
+
 <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
 <audio ref={audioRef} onEnded={onAudioEnded} hidden />
 
@@ -399,7 +443,7 @@ return (
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0 relative">
-        {/* REDESIGNED Call Mode Overlay */}
+        {/* Call Mode Overlay */}
         {isCallMode && (
           <div className="absolute inset-0 z-[60] bg-slate-950 flex flex-col items-center justify-between text-white p-12 animate-in fade-in duration-700">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none flex items-center justify-center">
@@ -437,7 +481,6 @@ return (
                 <p className="text-blue-400 font-bold uppercase tracking-[0.3em] text-xs">Hands-Free Assessment</p>
               </div>
 
-              {/* Enhanced Visual Feedback Bubble */}
               <div className="bg-white/5 border-2 border-white/10 backdrop-blur-2xl p-8 rounded-[2.5rem] w-full min-h-[160px] flex flex-col items-center justify-center shadow-2xl relative">
                  <div className="absolute -top-4 bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">Live Transcription</div>
                  <p className="text-2xl text-blue-50 font-semibold italic opacity-95 leading-relaxed">
@@ -447,10 +490,7 @@ return (
             </div>
 
             <div className="relative z-10 w-full flex justify-center pb-8">
-              <button
-                onClick={toggleCallMode}
-                className="group flex flex-col items-center gap-6"
-              >
+              <button onClick={toggleCallMode} className="group flex flex-col items-center gap-6">
                 <div className="bg-red-500 hover:bg-red-600 p-10 rounded-full shadow-[0_0_60px_-10px_rgba(239,68,68,0.5)] transition-all hover:scale-110 active:scale-90 border-4 border-white/10">
                   <PhoneOff size={40} className="text-white" />
                 </div>
@@ -466,15 +506,12 @@ return (
             <div>
               <h1 className="text-lg font-bold text-slate-800">{activeChat.title}</h1>
               <p className="text-[10px] font-bold text-green-600 uppercase tracking-tighter flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Clinical Support Active
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Active
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={toggleCallMode}
-              className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-md group"
-            >
+            <button onClick={toggleCallMode} className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-md group">
               <Phone size={18} className="group-hover:animate-bounce" /> Voice Call
             </button>
             <button onClick={generateReport} className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-md">
@@ -520,8 +557,7 @@ return (
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={isRecording ? "Listening..." : "Tell me about your health..."}
-                className={`w-full pl-6 pr-14 py-4 rounded-2xl border-2 transition-all focus:outline-none focus:ring-4 focus:ring-blue-50/50 ${isRecording ? 'border-blue-400 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`}
-              />
+                className={`w-full pl-6 pr-14 py-4 rounded-2xl border-2 transition-all focus:outline-none focus:ring-4 focus:ring-blue-50/50 ${isRecording ? 'border-blue-400 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`} />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                 {isFinishingSpeech && <Loader2 className="animate-spin text-blue-500" size={18} />}
                 <button onClick={toggleRecording} className={`p-2.5 rounded-xl transition-all ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-white text-slate-400 hover:text-blue-600 border border-slate-100 shadow-sm'}`}>
@@ -543,16 +579,20 @@ return (
                   <h2 className="text-2xl font-bold text-slate-900">Health Summary</h2>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => {
-                    const content = `MEDIFLOW ASSESSMENT\nName: ${reportData.patientName}\nAge: ${reportData.patientAge}\nSummary: ${reportData.symptomSummary}\nObs: ${reportData.observations.join(', ')}\nPre: ${reportData.precautions.join(', ')}`;
-                    const blob = new Blob([content], { type: 'text/plain' });
-                    const link = document.createElement('a');
-                    link.download = "MediFlow_Report.txt"; link.href = URL.createObjectURL(blob); link.click();
-                  }} className="p-2.5 bg-white rounded-xl text-slate-600 border shadow-sm hover:bg-slate-50"><Type size={20} /></button>
+                  <button onClick={downloadAsText} className="flex items-center gap-2 p-2.5 bg-white hover:bg-slate-50 rounded-xl text-slate-700 border border-slate-200 shadow-sm transition-all text-sm font-bold">
+                    <Type size={20} />
+                    <span className="hidden sm:inline">Text</span>
+                  </button>
+                  <button onClick={downloadAsImage} className="flex items-center gap-2 p-2.5 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-700 border border-blue-200 shadow-sm transition-all text-sm font-bold">
+                    <ImageIcon size={20} />
+                    <span className="hidden sm:inline">Image</span>
+                  </button>
                   <button onClick={() => setShowReport(false)} className="p-2.5 hover:bg-red-50 rounded-xl text-slate-400 hover:text-red-500"><X size={24} /></button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-12 bg-white" ref={reportRef}>
+
+              {/* Inner wrapper specifically for full capture */}
+              <div className="flex-1 overflow-y-auto p-12 bg-white" id="clinical-report-container" ref={reportRef}>
                 {generatingReport ? (
                   <div className="h-full flex flex-col items-center justify-center gap-6"><div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div><p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Synthesizing Clinical Record...</p></div>
                 ) : reportData && (
