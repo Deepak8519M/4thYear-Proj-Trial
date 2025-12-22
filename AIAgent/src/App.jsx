@@ -23,9 +23,10 @@ import {
   ClipboardList,
   Image as ImageIcon,
   Type,
+  Trash2,
 } from "lucide-react";
 
-const apiKey = "AIzaSyC-YoMTBSOl5XVQjUrjn_LllvgqesJfbSY";
+const apiKey = "AIzaSyCfzOmW3x9VcREd_JCyZfwmh20kzxmt78Q";
 const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
 const TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
@@ -36,7 +37,7 @@ const SYSTEM_PROMPT = `You are a professional AI Medical Assistant. Your goal is
 4. Based on the symptoms, identify potential conditions (clearly stating these are possibilities, not a final diagnosis).
 5. Provide actionable precautionary measures and lifestyle advice.
 6. ALWAYS include a medical disclaimer that you are an AI and the user should consult a human doctor for medical emergencies.
-7. Tone: Supportive, clinical, and clear.`;
+7. Tone: Supportive, clinical, and clear. Do not use markdown formatting like asterisks for bolding or lists. Use plain text.`;
 
 const REPORT_SCHEMA = {
   type: "OBJECT",
@@ -72,7 +73,7 @@ const App = () => {
   const [chats, setChats] = useState([
     {
       id: "1",
-      title: "New Assessment",
+      title: "Assessment 1",
       messages: [
         {
           role: "bot",
@@ -101,8 +102,8 @@ const App = () => {
   const recognitionRef = useRef(null);
   const audioRef = useRef(null);
   const silenceTimerRef = useRef(null);
-  const lastTranscriptRef = useRef("");
   const reportRef = useRef(null);
+  const isProcessingRef = useRef(false);
 
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0];
   const messages = activeChat.messages;
@@ -118,8 +119,10 @@ const App = () => {
       try {
         const { chats: savedChats, activeChatId: savedActiveId } =
           JSON.parse(savedState);
-        if (savedChats) setChats(savedChats);
-        if (savedActiveId) setActiveChatId(savedActiveId);
+        if (savedChats && savedChats.length > 0) {
+          setChats(savedChats);
+          if (savedActiveId) setActiveChatId(savedActiveId);
+        }
       } catch (e) {
         console.error("Failed to parse local storage", e);
       }
@@ -127,10 +130,9 @@ const App = () => {
     setIsDataLoaded(true);
   }, []);
 
-  // Sync state to Local Storage whenever it changes
+  // Sync state to Local Storage
   useEffect(() => {
     if (!isDataLoaded) return;
-
     const stateToSave = JSON.stringify({
       chats,
       activeChatId,
@@ -154,40 +156,38 @@ const App = () => {
     };
   }, []);
 
+  // Stabilized Speech Recognition Setup
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = "en-US";
+    if (SpeechRecognition && !recognitionRef.current) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
 
-      recognitionRef.current.onresult = (event) => {
+      recognition.onresult = (event) => {
         let currentTranscript = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
+        for (let i = 0; i < event.results.length; ++i) {
           currentTranscript += event.results[i][0].transcript;
         }
 
         if (currentTranscript.trim()) {
           setInput(currentTranscript);
-          lastTranscriptRef.current = currentTranscript;
           setIsFinishingSpeech(true);
 
           if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
 
           silenceTimerRef.current = setTimeout(() => {
-            const finalRequest = lastTranscriptRef.current;
-            if (finalRequest.trim()) {
-              handleSend(finalRequest);
-              recognitionRef.current?.stop();
-              setIsFinishingSpeech(false);
+            if (currentTranscript.trim() && !isProcessingRef.current) {
+              handleSend(currentTranscript);
+              recognition.stop();
             }
-          }, 1500);
+          }, 1200);
         }
       };
 
-      recognitionRef.current.onerror = (e) => {
+      recognition.onerror = (e) => {
         if (e.error !== "no-speech") {
           setIsRecording(false);
           setIsFinishingSpeech(false);
@@ -195,12 +195,14 @@ const App = () => {
         }
       };
 
-      recognitionRef.current.onend = () => {
+      recognition.onend = () => {
         setIsRecording(false);
         setIsFinishingSpeech(false);
       };
+
+      recognitionRef.current = recognition;
     }
-  }, [activeChatId, chats]);
+  }, []);
 
   const pcmToWav = (pcmData, sampleRate) => {
     const buffer = new ArrayBuffer(44 + pcmData.length * 2);
@@ -235,14 +237,13 @@ const App = () => {
     } else {
       setError(null);
       setInput("");
-      lastTranscriptRef.current = "";
       recognitionRef.current?.start();
       setIsRecording(true);
     }
   };
 
   const callGeminiTTS = async (text) => {
-    if (!voiceEnabled) return;
+    if (!voiceEnabled || !text) return;
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${apiKey}`,
@@ -274,20 +275,24 @@ const App = () => {
         const url = URL.createObjectURL(wavBlob);
         if (audioRef.current) {
           audioRef.current.src = url;
-          audioRef.current.play();
+          audioRef.current
+            .play()
+            .catch((e) => console.log("Audio play blocked", e));
           setIsSpeaking(true);
         }
       }
     } catch (e) {
-      console.error(e);
+      console.error("TTS failed", e);
     }
   };
 
   const handleSend = async (manualInput) => {
     const textToSend = manualInput || input;
-    if (!textToSend.trim() || loading) return;
+    if (!textToSend.trim() || isProcessingRef.current || loading) return;
 
+    isProcessingRef.current = true;
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
     setInput("");
     const userMsg = { role: "user", text: textToSend.trim() };
 
@@ -304,7 +309,7 @@ const App = () => {
     setIsFinishingSpeech(false);
 
     try {
-      const chatContext = messages
+      const chatContext = activeChat.messages
         .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.text}`)
         .join("\n");
       const response = await fetch(
@@ -320,11 +325,15 @@ const App = () => {
           }),
         }
       );
+
       if (!response.ok) throw new Error();
       const data = await response.json();
-      const aiText =
+      const rawAiText =
         data.candidates?.[0]?.content?.parts?.[0]?.text ||
         "I'm sorry, I couldn't process that.";
+
+      const aiText = rawAiText.replace(/\*/g, "");
+
       setChats((prev) =>
         prev.map((chat) =>
           chat.id === activeChatId
@@ -339,11 +348,59 @@ const App = () => {
             : chat
         )
       );
+
       callGeminiTTS(aiText);
     } catch (err) {
-      setError("Assessment service error.");
+      setError("Assessment service error. Please try again.");
     } finally {
       setLoading(false);
+      isProcessingRef.current = false;
+    }
+  };
+
+  const startNewChat = () => {
+    if (loading) return;
+    const newId = Date.now().toString();
+    const assessmentNumber = chats.length + 1;
+    const newChat = {
+      id: newId,
+      title: `Assessment ${assessmentNumber}`,
+      messages: [
+        {
+          role: "bot",
+          text: "Welcome to MediFlow. To begin your clinical assessment, could you please provide your full name and age?",
+        },
+      ],
+    };
+    setChats([...chats, newChat]);
+    setActiveChatId(newId);
+  };
+
+  const deleteChat = (e, id) => {
+    e.stopPropagation();
+    const updatedChats = chats.filter((chat) => chat.id !== id);
+
+    if (updatedChats.length === 0) {
+      const newId = Date.now().toString();
+      const resetChats = [
+        {
+          id: newId,
+          title: "Assessment 1",
+          messages: [
+            {
+              role: "bot",
+              text: "Welcome to MediFlow. To begin your clinical assessment, could you please provide your full name and age?",
+            },
+          ],
+        },
+      ];
+      setChats(resetChats);
+      setActiveChatId(newId);
+    } else {
+      setChats(updatedChats);
+      if (activeChatId === id) {
+        setActiveChatId(updatedChats[0].id);
+      }
     }
   };
 
@@ -395,7 +452,6 @@ const App = () => {
 
   const downloadAsImage = () => {
     if (!reportRef.current || !window.html2canvas) return;
-
     const element = reportRef.current;
     window
       .html2canvas(element, {
@@ -419,7 +475,6 @@ const App = () => {
 
   const downloadAsText = () => {
     if (!reportData) return;
-
     const separator = "=".repeat(50);
     const content = `
 MEDIFLOW CLINICAL ASSESSMENT REPORT
@@ -454,8 +509,7 @@ ${
 ${separator}
 IMPORTANT DISCLAIMER:
 This automated summary is intended for informational purposes and does not 
-constitute a medical diagnosis. In case of emergency, contact local services 
-immediately.
+constitute a medical diagnosis.
 ${separator}
     `.trim();
 
@@ -494,23 +548,7 @@ ${separator}
         </div>
         <div className="p-4 flex-1 overflow-y-auto space-y-4">
           <button
-            onClick={() => {
-              const newId = Date.now().toString();
-              setChats([
-                ...chats,
-                {
-                  id: newId,
-                  title: "New Assessment",
-                  messages: [
-                    {
-                      role: "bot",
-                      text: "Welcome. Please provide your name and age to begin.",
-                    },
-                  ],
-                },
-              ]);
-              setActiveChatId(newId);
-            }}
+            onClick={startNewChat}
             className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition-all shadow-lg"
           >
             <Plus size={18} />
@@ -521,20 +559,28 @@ ${separator}
               Recent Sessions
             </p>
             {chats.map((chat) => (
-              <button
-                key={chat.id}
-                onClick={() => setActiveChatId(chat.id)}
-                className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-center gap-3 ${
-                  activeChatId === chat.id
-                    ? "bg-white/10 text-white"
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <History size={16} />
-                <span className="truncate text-sm font-medium">
-                  {chat.title}
-                </span>
-              </button>
+              <div key={chat.id} className="group relative flex items-center">
+                <button
+                  onClick={() => setActiveChatId(chat.id)}
+                  className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-center gap-3 pr-10 ${
+                    activeChatId === chat.id
+                      ? "bg-white/10 text-white"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <History size={16} />
+                  <span className="truncate text-sm font-medium">
+                    {chat.title}
+                  </span>
+                </button>
+                <button
+                  onClick={(e) => deleteChat(e, chat.id)}
+                  className="absolute right-2 p-1.5 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Delete Chat"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             ))}
           </div>
         </div>
@@ -758,7 +804,6 @@ ${separator}
                 ) : (
                   reportData && (
                     <div className="max-w-prose mx-auto">
-                      {/* Patient Information Section */}
                       <section className="bg-slate-50 rounded-[2.5rem] p-10 border border-slate-100 grid grid-cols-2 gap-10 mb-14 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-10 -mt-10"></div>
                         <div className="space-y-1 relative z-10">
@@ -800,7 +845,6 @@ ${separator}
                         </div>
                       </section>
 
-                      {/* Body Sections */}
                       <div className="space-y-12">
                         <section className="relative">
                           <div className="flex items-center gap-4 mb-6">
@@ -891,11 +935,7 @@ ${separator}
                             <p>
                               This automated summary is intended to assist in
                               symptom recording and does not constitute a
-                              medical diagnosis. AI interpretations may vary;
-                              accuracy depends on provided input. In case of
-                              severe chest pain, shortness of breath, or loss of
-                              consciousness, proceed immediately to the nearest
-                              emergency department.
+                              medical diagnosis.
                             </p>
                           </div>
                         </div>
