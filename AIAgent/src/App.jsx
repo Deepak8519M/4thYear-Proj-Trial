@@ -19,12 +19,13 @@ import {
   History,
   Menu,
   Loader2,
-  Printer,
   Calendar,
   ClipboardList,
+  Image as ImageIcon,
+  Type,
 } from "lucide-react";
 
-const apiKey = "AIzaSyCfzOmW3x9VcREd_JCyZfwmh20kzxmt78QG";
+const apiKey = "AIzaSyC-YoMTBSOl5XVQjUrjn_LllvgqesJfbSY";
 const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
 const TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
@@ -62,7 +63,12 @@ const REPORT_SCHEMA = {
   ],
 };
 
+const STORAGE_KEY = "mediflow_assessment_state";
+
 const App = () => {
+  // Persistence States
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
   const [chats, setChats] = useState([
     {
       id: "1",
@@ -76,6 +82,7 @@ const App = () => {
     },
   ]);
   const [activeChatId, setActiveChatId] = useState("1");
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showReport, setShowReport] = useState(false);
@@ -95,6 +102,7 @@ const App = () => {
   const audioRef = useRef(null);
   const silenceTimerRef = useRef(null);
   const lastTranscriptRef = useRef("");
+  const reportRef = useRef(null);
 
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0];
   const messages = activeChat.messages;
@@ -103,9 +111,48 @@ const App = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Load data from Local Storage on mount
+  useEffect(() => {
+    const savedState = localStorage.getItem(STORAGE_KEY);
+    if (savedState) {
+      try {
+        const { chats: savedChats, activeChatId: savedActiveId } =
+          JSON.parse(savedState);
+        if (savedChats) setChats(savedChats);
+        if (savedActiveId) setActiveChatId(savedActiveId);
+      } catch (e) {
+        console.error("Failed to parse local storage", e);
+      }
+    }
+    setIsDataLoaded(true);
+  }, []);
+
+  // Sync state to Local Storage whenever it changes
+  useEffect(() => {
+    if (!isDataLoaded) return;
+
+    const stateToSave = JSON.stringify({
+      chats,
+      activeChatId,
+      lastUpdated: Date.now(),
+    });
+    localStorage.setItem(STORAGE_KEY, stateToSave);
+  }, [chats, activeChatId, isDataLoaded]);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages, loading]);
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src =
+      "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      if (document.body.contains(script)) document.body.removeChild(script);
+    };
+  }, []);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -346,6 +393,79 @@ const App = () => {
     }
   };
 
+  const downloadAsImage = () => {
+    if (!reportRef.current || !window.html2canvas) return;
+
+    const element = reportRef.current;
+    window
+      .html2canvas(element, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        scrollY: -window.scrollY,
+        windowHeight: element.scrollHeight,
+        height: element.scrollHeight,
+      })
+      .then((canvas) => {
+        const link = document.createElement("a");
+        link.download = `MediFlow_Report_${
+          reportData?.patientName || "Patient"
+        }.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+  };
+
+  const downloadAsText = () => {
+    if (!reportData) return;
+
+    const separator = "=".repeat(50);
+    const content = `
+MEDIFLOW CLINICAL ASSESSMENT REPORT
+${separator}
+DATE: ${new Date().toLocaleDateString()}
+CASE REF: MF-${Math.random().toString(36).substr(2, 9).toUpperCase()}
+${separator}
+
+PATIENT INFORMATION
+-------------------
+Name: ${reportData.patientName}
+Age:  ${reportData.patientAge}
+
+SYMPTOM SUMMARY
+---------------
+${reportData.symptomSummary}
+
+CLINICAL OBSERVATIONS
+---------------------
+${reportData.observations.map((obs) => `- ${obs}`).join("\n")}
+
+PRECAUTIONARY MEASURES
+----------------------
+${reportData.precautions.map((prec) => `- ${prec}`).join("\n")}
+
+RECOMMENDED NEXT STEPS
+----------------------
+${
+  reportData.nextSteps || "Schedule a consultation with a General Practitioner."
+}
+
+${separator}
+IMPORTANT DISCLAIMER:
+This automated summary is intended for informational purposes and does not 
+constitute a medical diagnosis. In case of emergency, contact local services 
+immediately.
+${separator}
+    `.trim();
+
+    const blob = new Blob([content], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.download = `MediFlow_Report_${reportData.patientName}.txt`;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+  };
+
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
       <audio ref={audioRef} onEnded={() => setIsSpeaking(false)} hidden />
@@ -410,7 +530,7 @@ const App = () => {
                     : "text-slate-400 hover:bg-white/5 hover:text-white"
                 }`}
               >
-                <MessageSquare size={16} />
+                <History size={16} />
                 <span className="truncate text-sm font-medium">
                   {chat.title}
                 </span>
@@ -465,51 +585,60 @@ const App = () => {
 
         <div className="flex-1 overflow-y-auto p-6 bg-[#fcfcfd]">
           <div className="max-w-3xl mx-auto space-y-6">
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                } animate-in fade-in slide-in-from-bottom-2`}
-              >
+            {!isDataLoaded && (
+              <div className="h-full flex flex-col items-center justify-center gap-4 py-20 text-slate-400">
+                <RefreshCw className="animate-spin w-8 h-8" />
+                <p className="text-sm font-bold uppercase tracking-widest">
+                  Resuming Session...
+                </p>
+              </div>
+            )}
+            {isDataLoaded &&
+              messages.map((msg, i) => (
                 <div
-                  className={`flex gap-4 max-w-[85%] ${
-                    msg.role === "user" ? "flex-row-reverse" : ""
-                  }`}
+                  key={i}
+                  className={`flex ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  } animate-in fade-in slide-in-from-bottom-2`}
                 >
                   <div
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
-                      msg.role === "user"
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-slate-400 border border-slate-200"
+                    className={`flex gap-4 max-w-[85%] ${
+                      msg.role === "user" ? "flex-row-reverse" : ""
                     }`}
                   >
-                    {msg.role === "user" ? (
-                      <User size={20} />
-                    ) : (
-                      <Bot size={20} />
-                    )}
-                  </div>
-                  <div
-                    className={`p-4 rounded-3xl text-sm sm:text-base leading-relaxed relative shadow-sm border ${
-                      msg.role === "user"
-                        ? "bg-blue-600 text-white border-blue-600 rounded-tr-none"
-                        : "bg-white text-slate-800 border-slate-100 rounded-tl-none"
-                    }`}
-                  >
-                    {msg.text}
-                    {msg.role === "bot" &&
-                      isSpeaking &&
-                      i === messages.length - 1 && (
-                        <div className="absolute -bottom-1 -right-1 flex h-3 w-3">
-                          <span className="animate-ping absolute h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                          <span className="h-3 w-3 rounded-full bg-blue-500"></span>
-                        </div>
+                    <div
+                      className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
+                        msg.role === "user"
+                          ? "bg-blue-600 text-white"
+                          : "bg-white text-slate-400 border border-slate-200"
+                      }`}
+                    >
+                      {msg.role === "user" ? (
+                        <User size={20} />
+                      ) : (
+                        <Bot size={20} />
                       )}
+                    </div>
+                    <div
+                      className={`p-4 rounded-3xl text-sm sm:text-base leading-relaxed relative shadow-sm border ${
+                        msg.role === "user"
+                          ? "bg-blue-600 text-white border-blue-600 rounded-tr-none"
+                          : "bg-white text-slate-800 border-slate-100 rounded-tl-none"
+                      }`}
+                    >
+                      {msg.text}
+                      {msg.role === "bot" &&
+                        isSpeaking &&
+                        i === messages.length - 1 && (
+                          <div className="absolute -bottom-1 -right-1 flex h-3 w-3">
+                            <span className="animate-ping absolute h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span className="h-3 w-3 rounded-full bg-blue-500"></span>
+                          </div>
+                        )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
             {loading && (
               <div className="flex gap-1.5 p-4 ml-14">
                 <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></span>
@@ -565,7 +694,7 @@ const App = () => {
             </div>
             <button
               onClick={() => handleSend()}
-              disabled={loading || !input.trim()}
+              disabled={loading || !input.trim() || !isDataLoaded}
               className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-30 transition-all shadow-lg shadow-blue-200"
             >
               <Send size={24} />
@@ -577,26 +706,34 @@ const App = () => {
         {showReport && (
           <div className="absolute inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-2xl h-[90vh] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
-              <div className="px-10 py-8 border-b bg-slate-50 flex items-center justify-between">
+              <div className="px-10 py-8 border-b bg-slate-50 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-4">
                   <div className="bg-slate-900 p-3 rounded-2xl text-white">
                     <FileText size={24} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-900">
-                      Medical Summary Report
+                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                      Clinical Summary
                     </h2>
                     <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1">
-                      Official Clinical Intake
+                      Official Digital Assessment
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => window.print()}
-                    className="p-2.5 hover:bg-white rounded-xl text-slate-600 border shadow-sm"
+                    onClick={downloadAsText}
+                    className="flex items-center gap-2 p-2.5 bg-white hover:bg-slate-50 rounded-xl text-slate-700 border border-slate-200 shadow-sm transition-all text-sm font-bold"
                   >
-                    <Printer size={20} />
+                    <Type size={18} />
+                    <span className="hidden sm:inline">Text</span>
+                  </button>
+                  <button
+                    onClick={downloadAsImage}
+                    className="flex items-center gap-2 p-2.5 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-700 border border-blue-200 shadow-sm transition-all text-sm font-bold"
+                  >
+                    <ImageIcon size={18} />
+                    <span className="hidden sm:inline">Image</span>
                   </button>
                   <button
                     onClick={() => setShowReport(false)}
@@ -607,49 +744,53 @@ const App = () => {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-12 bg-white space-y-12">
+              <div
+                className="flex-1 overflow-y-auto p-12 bg-white"
+                ref={reportRef}
+              >
                 {generatingReport ? (
                   <div className="h-full flex flex-col items-center justify-center gap-6">
                     <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
                     <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-                      Compiling Clinical Data...
+                      Synthesizing Patient Record...
                     </p>
                   </div>
                 ) : (
                   reportData && (
                     <div className="max-w-prose mx-auto">
-                      {/* Patient Card */}
-                      <section className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 grid grid-cols-2 gap-8 mb-12">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            Full Name
+                      {/* Patient Information Section */}
+                      <section className="bg-slate-50 rounded-[2.5rem] p-10 border border-slate-100 grid grid-cols-2 gap-10 mb-14 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-10 -mt-10"></div>
+                        <div className="space-y-1 relative z-10">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                            Patient Name
                           </label>
-                          <p className="text-xl font-bold text-slate-800">
+                          <p className="text-2xl font-black text-slate-900 tracking-tight">
                             {reportData.patientName}
                           </p>
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            Age
+                        <div className="space-y-1 relative z-10">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                            Patient Age
                           </label>
-                          <p className="text-xl font-bold text-slate-800">
+                          <p className="text-2xl font-black text-slate-900 tracking-tight">
                             {reportData.patientAge} Years
                           </p>
                         </div>
-                        <div className="space-y-1 border-t pt-4 border-slate-200">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <div className="space-y-1 border-t pt-6 border-slate-200">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                             Date of Assessment
                           </label>
-                          <div className="flex items-center gap-2 text-slate-600 font-medium">
-                            <Calendar size={14} />
+                          <div className="flex items-center gap-2 text-slate-600 font-bold text-lg">
+                            <Calendar size={18} className="text-blue-500" />
                             {new Date().toLocaleDateString()}
                           </div>
                         </div>
-                        <div className="space-y-1 border-t pt-4 border-slate-200">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            Assessment ID
+                        <div className="space-y-1 border-t pt-6 border-slate-200">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                            Case Reference
                           </label>
-                          <div className="text-slate-600 font-mono text-xs">
+                          <div className="text-slate-600 font-mono text-sm tracking-tight">
                             MF-
                             {Math.random()
                               .toString(36)
@@ -659,89 +800,104 @@ const App = () => {
                         </div>
                       </section>
 
-                      <div className="space-y-10">
-                        <section>
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                              <MessageSquare size={16} />
+                      {/* Body Sections */}
+                      <div className="space-y-12">
+                        <section className="relative">
+                          <div className="flex items-center gap-4 mb-6">
+                            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-100">
+                              <MessageSquare size={20} />
                             </div>
-                            <h3 className="text-lg font-bold text-slate-800">
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">
                               Symptom Summary
                             </h3>
                           </div>
-                          <p className="text-slate-600 leading-relaxed pl-11">
-                            {reportData.symptomSummary}
-                          </p>
+                          <div className="pl-14">
+                            <p className="text-slate-700 leading-relaxed text-lg font-medium">
+                              {reportData.symptomSummary}
+                            </p>
+                          </div>
                         </section>
 
-                        <section>
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
-                              <ClipboardList size={16} />
+                        <section className="relative">
+                          <div className="flex items-center gap-4 mb-6">
+                            <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg">
+                              <ClipboardList size={20} />
                             </div>
-                            <h3 className="text-lg font-bold text-slate-800">
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">
                               Clinical Observations
                             </h3>
                           </div>
-                          <ul className="space-y-3 pl-11">
+                          <div className="pl-14 grid gap-4">
                             {reportData.observations.map((item, i) => (
-                              <li
+                              <div
                                 key={i}
-                                className="flex gap-3 text-slate-600 leading-snug"
+                                className="flex gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-200 transition-colors"
                               >
-                                <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-2 shrink-0"></span>
-                                {item}
-                              </li>
+                                <span className="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0"></span>
+                                <p className="text-slate-700 font-medium leading-snug">
+                                  {item}
+                                </p>
+                              </div>
                             ))}
-                          </ul>
+                          </div>
                         </section>
 
-                        <section>
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
-                              <ShieldAlert size={16} />
+                        <section className="relative">
+                          <div className="flex items-center gap-4 mb-6">
+                            <div className="w-10 h-10 rounded-2xl bg-green-600 text-white flex items-center justify-center shadow-lg shadow-green-100">
+                              <ShieldAlert size={20} />
                             </div>
-                            <h3 className="text-lg font-bold text-slate-800">
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">
                               Precautionary Measures
                             </h3>
                           </div>
-                          <ul className="space-y-3 pl-11">
+                          <div className="pl-14 space-y-4">
                             {reportData.precautions.map((item, i) => (
-                              <li
+                              <div
                                 key={i}
-                                className="flex gap-3 text-slate-600 leading-snug bg-green-50/50 p-3 rounded-xl border border-green-100/50"
+                                className="flex gap-4 items-start p-5 bg-green-50/50 rounded-2xl border border-green-100/50"
                               >
-                                <span className="text-green-600 font-bold">
-                                  •
-                                </span>
-                                {item}
-                              </li>
+                                <div className="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0 mt-0.5">
+                                  <span className="text-xs font-black">✓</span>
+                                </div>
+                                <p className="text-green-900 font-bold leading-tight">
+                                  {item}
+                                </p>
+                              </div>
                             ))}
-                          </ul>
+                          </div>
                         </section>
 
-                        <div className="p-8 bg-slate-900 rounded-[2rem] text-white">
-                          <h4 className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 mb-2">
+                        <div className="mt-16 p-10 bg-slate-900 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
+                          <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-700"></div>
+                          <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400 mb-4">
                             Recommended Next Steps
                           </h4>
-                          <p className="text-slate-300 leading-relaxed">
+                          <p className="text-slate-200 leading-relaxed text-lg font-medium relative z-10">
                             {reportData.nextSteps ||
-                              "Consult a general practitioner within 24-48 hours for a physical examination and formal diagnosis."}
+                              "Please schedule a priority consultation with a certified General Practitioner to discuss these findings and establish a formal diagnostic plan."}
                           </p>
                         </div>
 
-                        <div className="pt-8 border-t border-slate-100 flex gap-4 text-slate-400 italic text-[11px] leading-relaxed">
+                        <div className="pt-12 border-t border-slate-100 flex gap-6 text-slate-400 italic text-xs leading-relaxed pb-10">
                           <AlertCircle
-                            size={20}
+                            size={24}
                             className="shrink-0 text-slate-300"
                           />
-                          <p>
-                            This report is for informational purposes and was
-                            generated by an AI assistant. It does not replace
-                            professional medical judgment. If you are
-                            experiencing a life-threatening emergency, contact
-                            emergency services immediately.
-                          </p>
+                          <div className="space-y-2">
+                            <p className="font-bold text-slate-500 uppercase tracking-widest text-[10px]">
+                              Important Disclaimer
+                            </p>
+                            <p>
+                              This automated summary is intended to assist in
+                              symptom recording and does not constitute a
+                              medical diagnosis. AI interpretations may vary;
+                              accuracy depends on provided input. In case of
+                              severe chest pain, shortness of breath, or loss of
+                              consciousness, proceed immediately to the nearest
+                              emergency department.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
