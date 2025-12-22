@@ -26,7 +26,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-const apiKey = "AIzaSyCfzOmW3x9VcREd_JCyZfwmh20kzxmt78Q";
+const apiKey = "AIzaSyDWWuRTaRtLuXh1JLSwIX38cFSPEUJXh6Y";
 const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
 const TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
