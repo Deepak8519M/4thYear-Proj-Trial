@@ -78,7 +78,7 @@ article: <BookOpen className="w-3 h-3 mr-1" />,
 link: <ExternalLink className="w-3 h-3 mr-1" />,
 };
 return (
-<span className={`flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${styles[type]}`}>
+<span className={`flex items-center px-3 py-1 rounded-full text-[10px] font-bold border ${styles[type]}`}>
 {icons[type]}
 {type.toUpperCase()}
 </span>
@@ -137,7 +137,7 @@ return (
 <div className="w-full">
 <div className="flex gap-2 mb-2">
 <Badge type={item.type} />
-{item.level && <span className="text-[10px] font-bold bg-slate-800/80 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full uppercase tracking-wider">{item.level}</span>}
+{item.level && <span className="text-[10px] font-bold bg-slate-800/80 text-slate-300 border border-slate-700 px-3 py-1 rounded-full uppercase tracking-wider">{item.level}</span>}
 </div>
 <h2 className="text-2xl sm:text-4xl font-black text-white mt-2 leading-tight drop-shadow-md">{item.title}</h2>
 </div>
@@ -181,7 +181,7 @@ className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all bord
 <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Resource Info</p>
 <div className="space-y-3">
 <div className="flex justify-between text-sm"><span className="text-slate-500">Format</span><span className="font-bold text-slate-200 capitalize">{item.type}</span></div>
-<div className="flex justify-between text-sm"><span className="text-slate-500">Time</span><span className="font-bold text-slate-200">{item.duration || item.readTime || 'Varies'}</span></div>
+<div className="flex justify-between text-sm"><span className="text-slate-500">Time</span><span className="font-bold text-slate-200">{item.time || item.duration || item.readTime || 'Varies'}</span></div>
 <div className="flex justify-between text-sm"><span className="text-slate-500">Audience</span><span className="font-bold text-slate-200">{item.audience || 'Patients'}</span></div>
 <div className="flex justify-between text-sm"><span className="text-slate-500">Level</span><span className="font-bold text-slate-200">{item.level || 'Beginner'}</span></div>
 </div>
@@ -231,7 +231,7 @@ const [newPassInput, setNewPassInput] = useState('');
 const [newResource, setNewResource] = useState({
 title: '', category: 'heart', type: 'video', source: '', duration: '', readTime: '',
 description: '', why: '', thumbnail: '', externalUrl: '', youtubeId: '',
-audience: 'Patients', level: 'Beginner', language: 'English'
+audience: 'Patients', level: 'Beginner', language: 'English', time: ''
 });
 
 useEffect(() => {
@@ -298,7 +298,7 @@ setResources(prev => [{ ...newResource, id, createdAt: new Date().toISOString() 
 setNewResource({
 title: '', category: 'heart', type: 'video', source: '', duration: '', readTime: '',
 description: '', why: '', thumbnail: '', externalUrl: '', youtubeId: '',
-audience: 'Patients', level: 'Beginner', language: 'English'
+audience: 'Patients', level: 'Beginner', language: 'English', time: ''
 });
 setCurrentView('user');
 };
@@ -500,9 +500,15 @@ return (
                           </div>
                         </div>
 
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase px-2 flex items-center gap-1"><Globe className="w-3 h-3" /> Language</label>
-                          <input type="text" placeholder="Language (e.g., English)" value={newResource.language} onChange={e => setNewResource({...newResource, language: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 font-bold" />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase px-2 flex items-center gap-1"><Globe className="w-3 h-3" /> Language</label>
+                            <input type="text" placeholder="Language (e.g., English)" value={newResource.language} onChange={e => setNewResource({...newResource, language: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 font-bold" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase px-2 flex items-center gap-1"><Clock className="w-3 h-3" /> Time</label>
+                            <input type="text" placeholder="e.g., 5 min" value={newResource.time} onChange={e => setNewResource({...newResource, time: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 font-bold" />
+                          </div>
                         </div>
 
                         <div className="space-y-1">
@@ -599,10 +605,10 @@ return (
                         <div className="absolute top-5 left-5">
                           <div className="flex flex-col gap-1">
                             <Badge type={item.type} />
-                            {item.level && <span className="text-[8px] font-black bg-slate-900/80 text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded-full uppercase tracking-tighter self-start">{item.level}</span>}
+                            {item.level && <span className="text-[8px] font-black bg-slate-900/80 text-slate-300 border border-slate-700 px-3 py-1 rounded-full uppercase tracking-tighter self-start">{item.level}</span>}
                           </div>
                         </div>
-                        {(item.duration || item.readTime) && <div className="absolute bottom-5 right-5 bg-slate-950/90 backdrop-blur-md text-white text-[10px] px-3 py-1.5 rounded-xl font-black flex items-center border border-slate-800"><Clock className="w-3.5 h-3.5 mr-1.5 text-blue-400" /> {item.duration || item.readTime}</div>}
+                        {(item.time || item.duration || item.readTime) && <div className="absolute bottom-5 right-5 bg-slate-950/90 backdrop-blur-md text-white text-[10px] px-3 py-1.5 rounded-xl font-black flex items-center border border-slate-800"><Clock className="w-3.5 h-3.5 mr-1.5 text-blue-400" /> {item.time || item.duration || item.readTime}</div>}
                         {savedIds.includes(item.id) && <div className="absolute top-5 right-5 bg-blue-600 text-white p-2 rounded-full shadow-lg scale-110 border border-blue-400"><BookmarkCheck className="w-4 h-4" /></div>}
                       </div>
                       <div className="p-7">
