@@ -37,12 +37,18 @@ CheckCircle2,
 AlertCircle,
 Users,
 Layers,
-Globe
+Globe,
+Utensils,
+Sun,
+ShieldAlert,
+KeyRound,
+LogOut
 } from 'lucide-react';
 
 // --- Constants ---
-const ADMIN_PASSWORD = "admin123";
+const DEFAULT_PASSWORD = "admin123";
 const STORAGE_KEY = "health_hub_local_data";
+const PASS_KEY = "health_hub_admin_pass";
 const apiKey = "";
 
 const CATEGORIES = [
@@ -51,7 +57,10 @@ const CATEGORIES = [
 { id: 'diabetes', name: 'Diabetes', icon: <Activity className="w-4 h-4" /> },
 { id: 'fitness', name: 'Fitness & Pain', icon: <Zap className="w-4 h-4" /> },
 { id: 'mental', name: 'Mental Health', icon: <Brain className="w-4 h-4" /> },
+{ id: 'nutrition', name: 'Nutrition & Diet', icon: <Utensils className="w-4 h-4" /> },
 { id: 'tests', name: 'Medical Tests', icon: <Stethoscope className="w-4 h-4" /> },
+{ id: 'respiratory', name: 'Respiratory', icon: <Wind className="w-4 h-4" /> },
+{ id: 'skin', name: 'Skin Health', icon: <Sun className="w-4 h-4" /> },
 { id: 'lifestyle', name: 'Sleep & Habits', icon: <Wind className="w-4 h-4" /> },
 ];
 
@@ -136,7 +145,7 @@ return (
 </div>
 )}
 </div>
-<div className="p-6 sm:p-10 space-y-8">
+<div className="p-6 sm:p-10 space-y-8 text-white">
 <div className="flex items-center justify-between border-b border-slate-800 pb-6">
 <div className="flex items-center space-x-3">
 <div className="w-10 h-10 rounded-full bg-green-900/30 flex items-center justify-center">
@@ -203,6 +212,10 @@ const saved = localStorage.getItem(STORAGE_KEY);
 return saved ? JSON.parse(saved) : [];
 });
 
+const [adminPassword, setAdminPassword] = useState(() => {
+return localStorage.getItem(PASS_KEY) || DEFAULT_PASSWORD;
+});
+
 const [selectedCategory, setSelectedCategory] = useState('all');
 const [searchQuery, setSearchQuery] = useState('');
 const [selectedItem, setSelectedItem] = useState(null);
@@ -212,16 +225,22 @@ const [currentView, setCurrentView] = useState('user');
 const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 const [passwordInput, setPasswordInput] = useState('');
 const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+const [isChangingPass, setIsChangingPass] = useState(false);
+const [newPassInput, setNewPassInput] = useState('');
+
 const [newResource, setNewResource] = useState({
 title: '', category: 'heart', type: 'video', source: '', duration: '', readTime: '',
 description: '', why: '', thumbnail: '', externalUrl: '', youtubeId: '',
 audience: 'Patients', level: 'Beginner', language: 'English'
 });
 
-// Persist data locally
 useEffect(() => {
 localStorage.setItem(STORAGE_KEY, JSON.stringify(resources));
 }, [resources]);
+
+useEffect(() => {
+localStorage.setItem(PASS_KEY, adminPassword);
+}, [adminPassword]);
 
 const toggleSave = (id) => {
 setSavedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -229,12 +248,29 @@ setSavedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, i
 
 const handleAdminAuth = (e) => {
 e.preventDefault();
-if (passwordInput === ADMIN_PASSWORD) {
+if (passwordInput === adminPassword) {
 setIsAdminAuthenticated(true);
 setPasswordInput('');
 } else {
 alert("Incorrect admin password.");
 }
+};
+
+const handleChangePassword = (e) => {
+e.preventDefault();
+if (newPassInput.length < 4) {
+alert("Password must be at least 4 characters.");
+return;
+}
+setAdminPassword(newPassInput);
+setNewPassInput('');
+setIsChangingPass(false);
+alert("Password updated successfully.");
+};
+
+const lockSession = () => {
+setIsAdminAuthenticated(false);
+setIsChangingPass(false);
 };
 
 const generateAIImage = async () => {
@@ -258,12 +294,7 @@ finally { setIsGeneratingImage(false); }
 const handleAddResource = async (e) => {
 e.preventDefault();
 const id = Date.now().toString();
-const itemToAdd = {
-...newResource,
-id,
-createdAt: new Date().toISOString()
-};
-setResources(prev => [itemToAdd, ...prev]);
+setResources(prev => [{ ...newResource, id, createdAt: new Date().toISOString() }, ...prev]);
 setNewResource({
 title: '', category: 'heart', type: 'video', source: '', duration: '', readTime: '',
 description: '', why: '', thumbnail: '', externalUrl: '', youtubeId: '',
@@ -365,23 +396,62 @@ return (
                     <h2 className="text-4xl font-black tracking-tight">Management Dashboard</h2>
                     <p className="text-slate-500 font-medium">Monitoring {resources.length} verified health resources</p>
                   </div>
-                  <div className="flex gap-4">
-                    <div className="bg-slate-900 border border-slate-800 px-6 py-4 rounded-2xl flex items-center space-x-4">
+                  <div className="flex flex-wrap gap-4">
+                    <div className="bg-slate-900 border border-slate-800 px-6 py-4 rounded-2xl flex items-center space-x-4 shadow-xl">
                       <BarChart3 className="text-blue-500 w-6 h-6" />
                       <div>
                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Total Data</p>
                         <p className="text-xl font-black">{dashboardStats.total}</p>
                       </div>
                     </div>
-                    <div className="bg-slate-900 border border-slate-800 px-6 py-4 rounded-2xl flex items-center space-x-4">
-                      <PlayCircle className="text-red-500 w-6 h-6" />
-                      <div>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Videos</p>
-                        <p className="text-xl font-black">{dashboardStats.videos}</p>
-                      </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setIsChangingPass(!isChangingPass)}
+                        className="bg-slate-900 border border-slate-800 px-6 py-4 rounded-2xl flex items-center space-x-4 hover:border-blue-500 transition-all shadow-xl"
+                      >
+                        <KeyRound className="text-amber-500 w-6 h-6" />
+                        <div className="text-left">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Security</p>
+                          <p className="text-sm font-black">Update Password</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={lockSession}
+                        className="bg-slate-900 border border-red-900/30 px-6 py-4 rounded-2xl flex items-center space-x-4 hover:border-red-500 hover:bg-red-500/10 transition-all shadow-xl"
+                        title="Lock Dashboard"
+                      >
+                        <LogOut className="text-red-500 w-6 h-6" />
+                        <div className="text-left">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Session</p>
+                          <p className="text-sm font-black text-red-500">Lock Hub</p>
+                        </div>
+                      </button>
                     </div>
                   </div>
                 </div>
+
+                {/* Password Change Sub-Form */}
+                {isChangingPass && (
+                  <div className="bg-slate-900/50 border border-amber-900/30 p-6 rounded-2xl animate-in slide-in-from-top-2 duration-300">
+                    <h4 className="text-sm font-black uppercase tracking-widest mb-4 text-amber-500 flex items-center">
+                      <ShieldAlert className="w-4 h-4 mr-2" /> Change Admin Access Key
+                    </h4>
+                    <form onSubmit={handleChangePassword} className="flex flex-col sm:flex-row gap-4">
+                      <input
+                        required
+                        type="password"
+                        placeholder="Enter New Password"
+                        value={newPassInput}
+                        onChange={(e) => setNewPassInput(e.target.value)}
+                        className="flex-1 bg-slate-950 border border-slate-800 p-3 rounded-xl outline-none focus:border-blue-500 transition-all font-bold"
+                      />
+                      <div className="flex gap-2">
+                        <button type="submit" className="bg-blue-600 px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all">Save Key</button>
+                        <button type="button" onClick={() => setIsChangingPass(false)} className="bg-slate-800 px-6 py-3 rounded-xl font-bold hover:bg-slate-700 transition-all">Cancel</button>
+                      </div>
+                    </form>
+                  </div>
+                )}
 
                 {/* Main Grid: Form and Item List */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -392,19 +462,19 @@ return (
                       <form onSubmit={handleAddResource} className="space-y-4">
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Basic Information</label>
-                          <input required type="text" placeholder="Content Title" value={newResource.title} onChange={e => setNewResource({...newResource, title: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 transition-all" />
+                          <input required type="text" placeholder="Content Title" value={newResource.title} onChange={e => setNewResource({...newResource, title: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 transition-all font-bold" />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Category</label>
-                            <select value={newResource.category} onChange={e => setNewResource({...newResource, category: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none appearance-none cursor-pointer focus:border-blue-500">
+                            <select value={newResource.category} onChange={e => setNewResource({...newResource, category: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none appearance-none cursor-pointer focus:border-blue-500 font-bold">
                               {CATEGORIES.filter(c => c.id !== 'all').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                           </div>
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Format</label>
-                            <select value={newResource.type} onChange={e => setNewResource({...newResource, type: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none appearance-none cursor-pointer focus:border-blue-500">
+                            <select value={newResource.type} onChange={e => setNewResource({...newResource, type: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none appearance-none cursor-pointer focus:border-blue-500 font-bold">
                               <option value="video">Video</option><option value="article">Article</option><option value="link">Resource Link</option>
                             </select>
                           </div>
@@ -413,7 +483,7 @@ return (
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-2 flex items-center gap-1"><Users className="w-3 h-3" /> Audience</label>
-                            <select value={newResource.audience} onChange={e => setNewResource({...newResource, audience: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none appearance-none cursor-pointer focus:border-blue-500">
+                            <select value={newResource.audience} onChange={e => setNewResource({...newResource, audience: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none appearance-none cursor-pointer focus:border-blue-500 font-bold">
                               <option value="Patients">Patients</option>
                               <option value="Caregivers">Caregivers</option>
                               <option value="Professionals">Medical Pros</option>
@@ -422,7 +492,7 @@ return (
                           </div>
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase px-2 flex items-center gap-1"><Layers className="w-3 h-3" /> Level</label>
-                            <select value={newResource.level} onChange={e => setNewResource({...newResource, level: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none appearance-none cursor-pointer focus:border-blue-500">
+                            <select value={newResource.level} onChange={e => setNewResource({...newResource, level: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none appearance-none cursor-pointer focus:border-blue-500 font-bold">
                               <option value="Beginner">Beginner</option>
                               <option value="Intermediate">Intermediate</option>
                               <option value="Advanced">Advanced</option>
@@ -432,13 +502,13 @@ return (
 
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase px-2 flex items-center gap-1"><Globe className="w-3 h-3" /> Language</label>
-                          <input type="text" placeholder="Language (e.g., English)" value={newResource.language} onChange={e => setNewResource({...newResource, language: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500" />
+                          <input type="text" placeholder="Language (e.g., English)" value={newResource.language} onChange={e => setNewResource({...newResource, language: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 font-bold" />
                         </div>
 
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Visual Asset</label>
                           <div className="relative">
-                            <input type="text" placeholder="Thumbnail URL" value={newResource.thumbnail} onChange={e => setNewResource({...newResource, thumbnail: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 pr-14" />
+                            <input type="text" placeholder="Thumbnail URL" value={newResource.thumbnail} onChange={e => setNewResource({...newResource, thumbnail: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 pr-14 font-bold" />
                             <button type="button" disabled={isGeneratingImage || !newResource.title} onClick={generateAIImage} className="absolute right-2 top-2 p-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 text-white rounded-lg transition-all">
                               {isGeneratingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
                             </button>
@@ -447,14 +517,14 @@ return (
 
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Source & Media</label>
-                          <input type="text" placeholder="Organization (e.g., Mayo Clinic)" value={newResource.source} onChange={e => setNewResource({...newResource, source: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 mb-2" />
-                          <input type="text" placeholder="External URL / YouTube ID" value={newResource.externalUrl || newResource.youtubeId} onChange={e => setNewResource({...newResource, externalUrl: e.target.value, youtubeId: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500" />
+                          <input type="text" placeholder="Organization (e.g., Mayo Clinic)" value={newResource.source} onChange={e => setNewResource({...newResource, source: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 mb-2 font-bold" />
+                          <input type="text" placeholder="External URL / YouTube ID" value={newResource.externalUrl || newResource.youtubeId} onChange={e => setNewResource({...newResource, externalUrl: e.target.value, youtubeId: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 font-bold" />
                         </div>
 
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase px-2">Educational Details</label>
-                          <textarea required placeholder="Brief Summary" rows="2" value={newResource.description} onChange={e => setNewResource({...newResource, description: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 resize-none mb-2" />
-                          <textarea required placeholder="Why it's useful?" rows="2" value={newResource.why} onChange={e => setNewResource({...newResource, why: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 resize-none" />
+                          <textarea required placeholder="Brief Summary" rows="2" value={newResource.description} onChange={e => setNewResource({...newResource, description: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 resize-none mb-2 text-sm" />
+                          <textarea required placeholder="Why it's useful?" rows="2" value={newResource.why} onChange={e => setNewResource({...newResource, why: e.target.value})} className="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:border-blue-500 resize-none text-sm" />
                         </div>
 
                         <button type="submit" className="w-full bg-blue-600 py-5 rounded-2xl font-black text-lg hover:bg-blue-700 shadow-xl shadow-blue-900/10 transition-all">Push to Live Hub</button>
@@ -509,7 +579,7 @@ return (
             </section>
 
             <div className="max-w-7xl mx-auto px-4 mb-12 sticky top-20 z-30 py-2 bg-slate-950/80 backdrop-blur-sm">
-              <div className="flex space-x-3 overflow-x-auto pb-4 scrollbar-hide">
+              <div className="flex flex-wrap gap-3 pb-4">
                 {CATEGORIES.map((cat) => (
                   <button key={cat.id} onClick={() => {setSelectedCategory(cat.id); setShowSavedOnly(false); window.scrollTo({ top: 400, behavior: 'smooth' });}} className={`flex items-center space-x-2 px-6 py-3 rounded-2xl whitespace-nowrap font-bold text-sm transition-all border-2 ${selectedCategory === cat.id && !showSavedOnly ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-blue-700'}`}>
                     {cat.icon}<span>{cat.name}</span>
