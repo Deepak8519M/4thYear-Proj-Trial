@@ -1,115 +1,118 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
-  User,
-  UserPlus,
-  Calendar,
-  Clock,
-  CreditCard,
-  CheckCircle,
-  ChevronRight,
-  ChevronLeft,
-  Stethoscope,
-  Plus,
-  Search,
-  Settings,
-  ShieldCheck,
-  MapPin,
-  Star,
-  Mail,
-  Loader2,
-  Trash2,
-  Video,
-  Filter,
-  TrendingUp,
-  XCircle,
-  RefreshCw,
-  Send,
-  ExternalLink,
-  Lock,
-  Unlock,
-  AlertCircle,
-  Key
+User,
+UserPlus,
+Calendar,
+Clock,
+CreditCard,
+CheckCircle,
+ChevronRight,
+ChevronLeft,
+Stethoscope,
+Plus,
+Search,
+Settings,
+ShieldCheck,
+MapPin,
+Star,
+Mail,
+Loader2,
+Trash2,
+Video,
+Filter,
+TrendingUp,
+XCircle,
+RefreshCw,
+Send,
+ExternalLink,
+Lock,
+Unlock,
+AlertCircle,
+Key,
+Shield
 } from "lucide-react";
 
 // --- Configuration & Constants ---
 const APP_ID = "healthsync-pro-v1";
 const API_KEY = ""; // Environment provides this
-const ADMIN_PASSCODE = "12345678"; // Tier 1 PIN
-const ADMIN_PHRASE = "ADMIN_SECURE"; // Tier 2 Alphanumeric Phrase
+
+// Default Fallbacks
+const DEFAULT_ADMIN_PASSCODE = "12345678";
+const DEFAULT_ADMIN_PHRASE = "ADMIN_SECURE";
 
 const SPECIALTIES = [
-  "All Specialties",
-  "Cardiologist",
-  "Dermatologist",
-  "Neurologist",
-  "Pediatrician",
-  "General Physician",
-  "Psychiatrist",
+"All Specialties",
+"Cardiologist",
+"Dermatologist",
+"Neurologist",
+"Pediatrician",
+"General Physician",
+"Psychiatrist",
 ];
 
 const GENDERS = ["Male", "Female", "Non-binary"];
 
 const TIME_SLOTS = [
-  "09:00 AM",
-  "10:00 AM",
-  "11:00 AM",
-  "01:00 PM",
-  "02:00 PM",
-  "03:00 PM",
-  "04:00 PM",
+"09:00 AM",
+"10:00 AM",
+"11:00 AM",
+"01:00 PM",
+"02:00 PM",
+"03:00 PM",
+"04:00 PM",
 ];
 
 const DEFAULT_DOCTORS = [
-  {
-    id: "d1",
-    name: "Dr. Sarah Mitchell",
-    specialty: "Cardiologist",
-    gender: "Female",
-    experience: "12 years",
-    rating: 4.9,
-    fee: 150,
-    location: "Downtown Medical Center",
-    about:
-      "Specializing in preventive cardiology and heart health management. Dr. Mitchell has published over 30 research papers on cardiovascular health.",
-    availability: ["Monday", "Wednesday", "Friday"],
-    hasVideo: true,
-    image:
-      "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=200&h=200",
-  },
-  {
-    id: "d2",
-    name: "Dr. James Wilson",
-    specialty: "Dermatologist",
-    gender: "Male",
-    experience: "8 years",
-    rating: 4.7,
-    fee: 120,
-    location: "Westside Skin Clinic",
-    about:
-      "Expert in clinical dermatology and skin cancer screening. Former head of dermatology at Westside General Hospital.",
-    availability: ["Tuesday", "Thursday", "Saturday"],
-    hasVideo: false,
-    image:
-      "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200&h=200",
-  },
+{
+id: "d1",
+name: "Dr. Sarah Mitchell",
+specialty: "Cardiologist",
+gender: "Female",
+experience: "12 years",
+rating: 4.9,
+fee: 150,
+location: "Downtown Medical Center",
+about:
+"Specializing in preventive cardiology and heart health management. Dr. Mitchell has published over 30 research papers on cardiovascular health.",
+availability: ["Monday", "Wednesday", "Friday"],
+hasVideo: true,
+image:
+"https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=200&h=200",
+},
+{
+id: "d2",
+name: "Dr. James Wilson",
+specialty: "Dermatologist",
+gender: "Male",
+experience: "8 years",
+rating: 4.7,
+fee: 120,
+location: "Westside Skin Clinic",
+about:
+"Expert in clinical dermatology and skin cancer screening. Former head of dermatology at Westside General Hospital.",
+availability: ["Tuesday", "Thursday", "Saturday"],
+hasVideo: false,
+image:
+"https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200&h=200",
+},
 ];
 
 // --- Confetti Celebration Component ---
 function Confetti() {
-  const canvasRef = useRef(null);
+const canvasRef = useRef(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    let animationId;
-    let particles = [];
-    let active = true;
+useEffect(() => {
+const canvas = canvasRef.current;
+const ctx = canvas.getContext("2d");
+let animationId;
+let particles = [];
+let active = true;
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     const colors = [
-      "#3b82f6", "#60a5fa", "#f59e0b", "#ec4899", 
+      "#3b82f6", "#60a5fa", "#f59e0b", "#ec4899",
       "#8b5cf6", "#10b981", "#ffffff", "#fbbf24"
     ];
 
@@ -164,7 +167,7 @@ function Confetti() {
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       let stillVisible = false;
-      
+
       particles.forEach((p) => {
         p.update();
         p.draw();
@@ -178,7 +181,7 @@ function Confetti() {
 
     init();
     animate();
-    
+
     const timeout = setTimeout(() => {
         active = false;
     }, 3000);
@@ -187,57 +190,74 @@ function Confetti() {
         cancelAnimationFrame(animationId);
         clearTimeout(timeout);
     };
-  }, []);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[500]" />;
+}, []);
+
+return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[500]" />;
 }
 
 // --- Main Application ---
 export default function App() {
-  const [view, setView] = useState("patient");
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  
-  const [doctors, setDoctors] = useState(() => {
-    const saved = localStorage.getItem(`${APP_ID}_doctors`);
-    return saved ? JSON.parse(saved) : DEFAULT_DOCTORS;
-  });
+const [view, setView] = useState("patient");
+const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
-  const [appointments, setAppointments] = useState(() => {
-    const saved = localStorage.getItem(`${APP_ID}_appointments`);
-    return saved ? JSON.parse(saved) : [];
-  });
+// Persistent Security State
+const [adminPin, setAdminPin] = useState(() =>
+localStorage.getItem(`${APP_ID}_admin_pin`) || DEFAULT_ADMIN_PASSCODE
+);
+const [adminPhrase, setAdminPhrase] = useState(() =>
+localStorage.getItem(`${APP_ID}_admin_phrase`) || DEFAULT_ADMIN_PHRASE
+);
 
-  const [bookingStep, setBookingStep] = useState(0);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [emailData, setEmailData] = useState({ subject: "", body: "" });
-  const [bookingDetails, setBookingDetails] = useState({
-    date: "",
-    time: "",
-    patientName: "",
-    patientEmail: "",
-    isTelehealth: false,
-  });
+const [doctors, setDoctors] = useState(() => {
+const saved = localStorage.getItem(`${APP_ID}_doctors`);
+return saved ? JSON.parse(saved) : DEFAULT_DOCTORS;
+});
 
-  // Sync to LocalStorage
-  useEffect(() => {
-    localStorage.setItem(`${APP_ID}_doctors`, JSON.stringify(doctors));
-  }, [doctors]);
+const [appointments, setAppointments] = useState(() => {
+const saved = localStorage.getItem(`${APP_ID}_appointments`);
+return saved ? JSON.parse(saved) : [];
+});
 
-  useEffect(() => {
-    localStorage.setItem(
-      `${APP_ID}_appointments`,
-      JSON.stringify(appointments)
-    );
-  }, [appointments]);
+const [bookingStep, setBookingStep] = useState(0);
+const [selectedDoctor, setSelectedDoctor] = useState(null);
+const [isProcessing, setIsProcessing] = useState(false);
+const [emailData, setEmailData] = useState({ subject: "", body: "" });
+const [bookingDetails, setBookingDetails] = useState({
+date: "",
+time: "",
+patientName: "",
+patientEmail: "",
+isTelehealth: false,
+});
 
-  // --- AI Integrations ---
+// Sync to LocalStorage
+useEffect(() => {
+localStorage.setItem(`${APP_ID}_doctors`, JSON.stringify(doctors));
+}, [doctors]);
 
-  const generateDoctorImage = async (name, specialty, gender) => {
-    const traits = ["approachable", "friendly", "experienced", "kind-hearted", "professional", "warm"];
-    const lightning = ["soft studio lighting", "bright professional lighting", "clean natural daylight", "cinematic soft focus"];
-    const demographics = ["diverse ethnicity", "unique facial features", "distinguished looking"];
-    
+useEffect(() => {
+localStorage.setItem(
+`${APP_ID}_appointments`,
+JSON.stringify(appointments)
+);
+}, [appointments]);
+
+// Sync Security Settings
+const handleUpdateSecurity = (newPin, newPhrase) => {
+setAdminPin(newPin);
+setAdminPhrase(newPhrase);
+localStorage.setItem(`${APP_ID}_admin_pin`, newPin);
+localStorage.setItem(`${APP_ID}_admin_phrase`, newPhrase);
+};
+
+// --- AI Integrations ---
+
+const generateDoctorImage = async (name, specialty, gender) => {
+const traits = ["approachable", "friendly", "experienced", "kind-hearted", "professional", "warm"];
+const lightning = ["soft studio lighting", "bright professional lighting", "clean natural daylight", "cinematic soft focus"];
+const demographics = ["diverse ethnicity", "unique facial features", "distinguished looking"];
+
     const randomTrait = traits[Math.floor(Math.random() * traits.length)];
     const randomLight = lightning[Math.floor(Math.random() * lightning.length)];
     const randomDemo = demographics[Math.floor(Math.random() * demographics.length)];
@@ -262,10 +282,11 @@ export default function App() {
     } catch (err) {
       return "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=200&h=200";
     }
-  };
 
-  const generateEmail = async (details, doctor) => {
-    const prompt = `Generate a professional and friendly appointment confirmation email. 
+};
+
+const generateEmail = async (details, doctor) => {
+const prompt = `Generate a professional and friendly appointment confirmation email. 
       Patient: ${details.patientName}. Doctor: ${doctor.name} (${
       doctor.specialty
     }). 
@@ -316,26 +337,27 @@ export default function App() {
 
     const result = await fetchWithRetry();
     setEmailData(result);
-  };
 
-  // --- Handlers ---
-  const handleAddDoctor = async (newDoc) => {
-    setIsProcessing(true);
-    const portrait = await generateDoctorImage(newDoc.name, newDoc.specialty, newDoc.gender);
-    const docWithMeta = {
-      ...newDoc,
-      id: `d-${Date.now()}`,
-      rating: 5.0,
-      image: portrait,
-      availability: newDoc.availability.split(",").map((s) => s.trim()),
-    };
-    setDoctors([...doctors, docWithMeta]);
-    setIsProcessing(false);
-  };
+};
 
-  const confirmBooking = async () => {
-    setIsProcessing(true);
-    
+// --- Handlers ---
+const handleAddDoctor = async (newDoc) => {
+setIsProcessing(true);
+const portrait = await generateDoctorImage(newDoc.name, newDoc.specialty, newDoc.gender);
+const docWithMeta = {
+...newDoc,
+id: `d-${Date.now()}`,
+rating: 5.0,
+image: portrait,
+availability: newDoc.availability.split(",").map((s) => s.trim()),
+};
+setDoctors([...doctors, docWithMeta]);
+setIsProcessing(false);
+};
+
+const confirmBooking = async () => {
+setIsProcessing(true);
+
     const newApt = {
       id: `apt-${Date.now()}`,
       doctor: selectedDoctor,
@@ -350,32 +372,33 @@ export default function App() {
         setIsProcessing(false);
         await generateEmail(bookingDetails, selectedDoctor);
     }, 1200);
-  };
 
-  const updateAptStatus = (id, newStatus) => {
-    setAppointments(
-      appointments.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
-    );
-  };
+};
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-blue-900/30">
-      {/* Navigation */}
-      <nav className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-[100]">
-        <div className="max-w-7xl mx-auto px-4 h-18 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
-              <Stethoscope size={24} />
-            </div>
-            <div>
-              <span className="text-xl font-black tracking-tight text-slate-100">
-                HealthSync
-              </span>
-              <span className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest leading-none">
-                Pro Edition
-              </span>
-            </div>
-          </div>
+const updateAptStatus = (id, newStatus) => {
+setAppointments(
+appointments.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+);
+};
+
+return (
+<div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-blue-900/30">
+{/_ Navigation _/}
+<nav className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-[100]">
+<div className="max-w-7xl mx-auto px-4 h-18 flex items-center justify-between">
+<div className="flex items-center gap-3">
+<div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
+<Stethoscope size={24} />
+</div>
+<div>
+<span className="text-xl font-black tracking-tight text-slate-100">
+HealthSync
+</span>
+<span className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest leading-none">
+Pro Edition
+</span>
+</div>
+</div>
 
           <div className="flex bg-slate-800 rounded-2xl p-1.5 border border-slate-700">
             <button
@@ -419,9 +442,16 @@ export default function App() {
               onStatusChange={updateAptStatus}
               isProcessing={isProcessing}
               onLogout={() => setIsAdminAuthenticated(false)}
+              adminPin={adminPin}
+              adminPhrase={adminPhrase}
+              onUpdateSecurity={handleUpdateSecurity}
             />
           ) : (
-            <AdminLockScreen onAuthenticated={() => setIsAdminAuthenticated(true)} />
+            <AdminLockScreen
+              onAuthenticated={() => setIsAdminAuthenticated(true)}
+              adminPin={adminPin}
+              adminPhrase={adminPhrase}
+            />
           )
         ) : (
           <PatientPortal
@@ -454,62 +484,63 @@ export default function App() {
         </div>
       )}
     </div>
-  );
+
+);
 }
 
 // --- Component: Admin Lock Screen with Tier 2 Security ---
-function AdminLockScreen({ onAuthenticated }) {
-  const [authStep, setAuthStep] = useState(1); // 1: PIN, 2: Phrase
-  const [pin, setPin] = useState("");
-  const [phrase, setPhrase] = useState("");
-  const [error, setError] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
+function AdminLockScreen({ onAuthenticated, adminPin, adminPhrase }) {
+const [authStep, setAuthStep] = useState(1); // 1: PIN, 2: Phrase
+const [pin, setPin] = useState("");
+const [phrase, setPhrase] = useState("");
+const [error, setError] = useState(false);
+const [isVerifying, setIsVerifying] = useState(false);
 
-  const handleInput = (val) => {
-    if (pin.length < 8 && !isNaN(val)) {
-      const newPin = pin + val;
-      setPin(newPin);
-      if (newPin.length === 8) {
-        verifyStep1(newPin);
-      }
-    }
-  };
+const handleInput = (val) => {
+if (pin.length < 8 && !isNaN(val)) {
+const newPin = pin + val;
+setPin(newPin);
+if (newPin.length === 8) {
+verifyStep1(newPin);
+}
+}
+};
 
-  const verifyStep1 = (submittedPin) => {
-    setIsVerifying(true);
-    setTimeout(() => {
-      if (submittedPin === ADMIN_PASSCODE) {
-        setAuthStep(2);
-        setError(false);
-      } else {
-        setError(true);
-        setPin("");
-        setTimeout(() => setError(false), 1000);
-      }
-      setIsVerifying(false);
-    }, 600);
-  };
+const verifyStep1 = (submittedPin) => {
+setIsVerifying(true);
+setTimeout(() => {
+if (submittedPin === adminPin) {
+setAuthStep(2);
+setError(false);
+} else {
+setError(true);
+setPin("");
+setTimeout(() => setError(false), 1000);
+}
+setIsVerifying(false);
+}, 600);
+};
 
-  const verifyStep2 = (e) => {
-    e.preventDefault();
-    setIsVerifying(true);
-    setTimeout(() => {
-      if (phrase.toUpperCase() === ADMIN_PHRASE) {
-        onAuthenticated();
-      } else {
-        setError(true);
-        setPhrase("");
-        setTimeout(() => setError(false), 1000);
-      }
-      setIsVerifying(false);
-    }, 600);
-  };
+const verifyStep2 = (e) => {
+e.preventDefault();
+setIsVerifying(true);
+setTimeout(() => {
+if (phrase.toUpperCase() === adminPhrase.toUpperCase()) {
+onAuthenticated();
+} else {
+setError(true);
+setPhrase("");
+setTimeout(() => setError(false), 1000);
+}
+setIsVerifying(false);
+}, 600);
+};
 
-  return (
-    <div className="max-w-md mx-auto mt-20 animate-in fade-in zoom-in-95 duration-500">
-      <div className="bg-slate-900 rounded-[3rem] p-10 border border-slate-800 shadow-2xl text-center space-y-8 relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl" />
-        
+return (
+<div className="max-w-md mx-auto mt-20 animate-in fade-in zoom-in-95 duration-500">
+<div className="bg-slate-900 rounded-[3rem] p-10 border border-slate-800 shadow-2xl text-center space-y-8 relative overflow-hidden">
+<div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl" />
+
         <div className={`mx-auto w-20 h-20 rounded-3xl flex items-center justify-center transition-all duration-300 shadow-lg ${error ? 'bg-red-900/30 text-red-500 shake' : 'bg-blue-600 text-white shadow-blue-900/20'}`}>
           {isVerifying ? <Loader2 size={32} className="animate-spin" /> : (authStep === 1 ? <Lock size={32} /> : <Key size={32} />)}
         </div>
@@ -519,8 +550,8 @@ function AdminLockScreen({ onAuthenticated }) {
             {authStep === 1 ? "Security Access" : "Identity Verification"}
           </h2>
           <p className="text-sm font-medium text-slate-400 mt-2">
-            {authStep === 1 
-              ? "Enter your 8-digit administrator PIN." 
+            {authStep === 1
+              ? "Enter your 8-digit administrator PIN."
               : "Enter secondary alphanumeric phrase."}
           </p>
         </div>
@@ -529,11 +560,11 @@ function AdminLockScreen({ onAuthenticated }) {
           <>
             <div className="flex justify-center gap-3">
               {[...Array(8)].map((_, i) => (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${
-                    pin.length > i 
-                      ? 'bg-blue-600 border-blue-600 scale-110 shadow-md' 
+                    pin.length > i
+                      ? 'bg-blue-600 border-blue-600 scale-110 shadow-md'
                       : 'bg-transparent border-slate-700'
                   } ${error ? 'border-red-500 bg-red-500' : ''}`}
                 />
@@ -550,8 +581,8 @@ function AdminLockScreen({ onAuthenticated }) {
                     else handleInput(num.toString());
                   }}
                   className={`h-16 rounded-2xl flex items-center justify-center font-black text-lg transition-all ${
-                    num === "" 
-                      ? "opacity-0 cursor-default" 
+                    num === ""
+                      ? "opacity-0 cursor-default"
                       : "bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-blue-500/50 active:scale-95"
                   } ${num === "back" ? "text-slate-500" : "text-slate-100"}`}
                 >
@@ -577,9 +608,9 @@ function AdminLockScreen({ onAuthenticated }) {
             >
               Verify Tier 2 Access
             </button>
-            <button 
-                type="button" 
-                onClick={() => setAuthStep(1)} 
+            <button
+                type="button"
+                onClick={() => setAuthStep(1)}
                 className="text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-slate-400"
             >
                 Return to PIN Stage
@@ -591,7 +622,7 @@ function AdminLockScreen({ onAuthenticated }) {
             Default Pin: 12345678 | Phrase: ADMIN_SECURE
         </div>
       </div>
-      
+
       <style>{`
         .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake {
@@ -602,21 +633,22 @@ function AdminLockScreen({ onAuthenticated }) {
         }
       `}</style>
     </div>
-  );
+
+);
 }
 
 // --- Component: Credit Card Visual ---
 function VisualCard({ cardNumber, cardName, expiry, cvv }) {
-  const formattedNumber = (cardNumber || "•••• •••• •••• ••••")
-    .padEnd(16, "•")
-    .replace(/(.{4})/g, "$1 ")
-    .trim();
+const formattedNumber = (cardNumber || "•••• •••• •••• ••••")
+.padEnd(16, "•")
+.replace(/(.{4})/g, "$1 ")
+.trim();
 
-  return (
-    <div className="relative w-full aspect-[1.6/1] rounded-[1.5rem] bg-gradient-to-br from-slate-800 via-slate-900 to-blue-900 p-6 text-white shadow-2xl shadow-blue-950/40 overflow-hidden flex flex-col justify-between group transition-all duration-500 border border-slate-700/50">
-      <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-white/10 transition-colors" />
-      <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500/10 rounded-full -ml-20 -mb-20 blur-3xl group-hover:bg-blue-500/20 transition-colors" />
-      
+return (
+<div className="relative w-full aspect-[1.6/1] rounded-[1.5rem] bg-gradient-to-br from-slate-800 via-slate-900 to-blue-900 p-6 text-white shadow-2xl shadow-blue-950/40 overflow-hidden flex flex-col justify-between group transition-all duration-500 border border-slate-700/50">
+<div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-white/10 transition-colors" />
+<div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500/10 rounded-full -ml-20 -mb-20 blur-3xl group-hover:bg-blue-500/20 transition-colors" />
+
       <div className="flex justify-between items-start">
         <div className="w-12 h-10 bg-gradient-to-r from-yellow-500 to-yellow-300 rounded-lg flex flex-col justify-center gap-1 p-2">
             <div className="h-[2px] w-full bg-slate-800/20" />
@@ -630,7 +662,7 @@ function VisualCard({ cardNumber, cardName, expiry, cvv }) {
         <div className="text-xl md:text-2xl font-mono tracking-widest transition-all text-slate-100">
           {formattedNumber}
         </div>
-        
+
         <div className="flex justify-between items-end">
           <div className="space-y-1">
             <span className="text-[8px] uppercase font-bold tracking-[0.2em] opacity-40">Card Holder</span>
@@ -645,66 +677,67 @@ function VisualCard({ cardNumber, cardName, expiry, cvv }) {
         </div>
       </div>
     </div>
-  );
+
+);
 }
 
 // --- Component: Patient Portal ---
 function PatientPortal({
-  doctors,
-  step,
-  setStep,
-  selectedDoctor,
-  setSelectedDoctor,
-  details,
-  setDetails,
-  onConfirm,
-  isProcessing,
-  emailData,
+doctors,
+step,
+setStep,
+selectedDoctor,
+setSelectedDoctor,
+details,
+setDetails,
+onConfirm,
+isProcessing,
+emailData,
 }) {
-  const [search, setSearch] = useState("");
-  const [specialtyFilter, setSpecialtyFilter] = useState("All Specialties");
-  
-  const [cardInfo, setCardInfo] = useState({
-    number: "",
-    name: "",
-    expiry: "",
-    cvv: "",
-  });
+const [search, setSearch] = useState("");
+const [specialtyFilter, setSpecialtyFilter] = useState("All Specialties");
 
-  const filteredDoctors = useMemo(() => {
-    return doctors.filter((doc) => {
-      const matchesSearch =
-        doc.name.toLowerCase().includes(search.toLowerCase()) ||
-        doc.specialty.toLowerCase().includes(search.toLowerCase()) ||
-        (doc.location || "").toLowerCase().includes(search.toLowerCase());
-      const matchesSpecialty =
-        specialtyFilter === "All Specialties" ||
-        doc.specialty === specialtyFilter;
-      return matchesSearch && matchesSpecialty;
-    });
-  }, [doctors, search, specialtyFilter]);
+const [cardInfo, setCardInfo] = useState({
+number: "",
+name: "",
+expiry: "",
+cvv: "",
+});
 
-  const sendRealEmail = () => {
-    const subject = encodeURIComponent(emailData.subject);
-    const body = encodeURIComponent(emailData.body);
-    window.location.href = `mailto:${details.patientEmail}?subject=${subject}&body=${body}`;
-  };
+const filteredDoctors = useMemo(() => {
+return doctors.filter((doc) => {
+const matchesSearch =
+doc.name.toLowerCase().includes(search.toLowerCase()) ||
+doc.specialty.toLowerCase().includes(search.toLowerCase()) ||
+(doc.location || "").toLowerCase().includes(search.toLowerCase());
+const matchesSpecialty =
+specialtyFilter === "All Specialties" ||
+doc.specialty === specialtyFilter;
+return matchesSearch && matchesSpecialty;
+});
+}, [doctors, search, specialtyFilter]);
 
-  const isCardValid = cardInfo.number.length >= 16 && cardInfo.name && cardInfo.expiry.length >= 4 && cardInfo.cvv.length >= 3;
+const sendRealEmail = () => {
+const subject = encodeURIComponent(emailData.subject);
+const body = encodeURIComponent(emailData.body);
+window.location.href = `mailto:${details.patientEmail}?subject=${subject}&body=${body}`;
+};
 
-  if (step === 0)
-    return (
-      <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
-        <div className="text-center max-w-3xl mx-auto space-y-4">
-          <h1 className="text-4xl md:text-5xl font-black text-slate-100 tracking-tight leading-tight">
-            Find and book the{" "}
-            <span className="text-blue-500">best healthcare</span> providers.
-          </h1>
-          <p className="text-lg text-slate-400 font-medium">
-            Access world-class doctors for in-person or video consultations,
-            instantly.
-          </p>
-        </div>
+const isCardValid = cardInfo.number.length >= 16 && cardInfo.name && cardInfo.expiry.length >= 4 && cardInfo.cvv.length >= 3;
+
+if (step === 0)
+return (
+<div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
+<div className="text-center max-w-3xl mx-auto space-y-4">
+<h1 className="text-4xl md:text-5xl font-black text-slate-100 tracking-tight leading-tight">
+Find and book the{" "}
+<span className="text-blue-500">best healthcare</span> providers.
+</h1>
+<p className="text-lg text-slate-400 font-medium">
+Access world-class doctors for in-person or video consultations,
+instantly.
+</p>
+</div>
 
         <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 shadow-2xl flex flex-col md:flex-row gap-4 items-center">
           <div className="relative flex-1 w-full">
@@ -820,20 +853,19 @@ function PatientPortal({
       </div>
     );
 
-  return (
-    <div className="max-w-4xl mx-auto animate-in zoom-in-95 duration-500 relative">
-      <div className="flex items-center gap-4 mb-10">
-        <button
-          onClick={() => setStep(step - 1)}
-          className="w-12 h-12 rounded-2xl border border-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-900 transition-colors"
-        >
-          <ChevronLeft size={24} />
-        </button>
-        <div>
-          <h2 className="text-2xl font-black text-slate-100">Booking Appointment</h2>
-          <p className="text-sm font-medium text-slate-500">Step {step} of 4</p>
-        </div>
-      </div>
+return (
+<div className="max-w-4xl mx-auto animate-in zoom-in-95 duration-500 relative">
+<div className="flex items-center gap-4 mb-10">
+<button
+onClick={() => setStep(step - 1)}
+className="w-12 h-12 rounded-2xl border border-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-900 transition-colors" >
+<ChevronLeft size={24} />
+</button>
+<div>
+<h2 className="text-2xl font-black text-slate-100">Booking Appointment</h2>
+<p className="text-sm font-medium text-slate-500">Step {step} of 4</p>
+</div>
+</div>
 
       <div className="grid lg:grid-cols-5 gap-10">
         <div className="lg:col-span-3 space-y-8">
@@ -961,20 +993,20 @@ function PatientPortal({
                 <h3 className="text-xl font-black flex items-center gap-3 text-slate-100">
                   <CreditCard className="text-blue-500" /> Secure Checkout
                 </h3>
-                
+
                 <div className="perspective-[1000px]">
-                    <VisualCard 
-                        cardNumber={cardInfo.number} 
-                        cardName={cardInfo.name} 
-                        expiry={cardInfo.expiry} 
-                        cvv={cardInfo.cvv} 
+                    <VisualCard
+                        cardNumber={cardInfo.number}
+                        cardName={cardInfo.name}
+                        expiry={cardInfo.expiry}
+                        cvv={cardInfo.cvv}
                     />
                 </div>
 
                 <div className="grid gap-4 mt-8">
                     <div>
                         <label className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2 block">Card Number</label>
-                        <input 
+                        <input
                             type="text"
                             maxLength="16"
                             placeholder="0000 0000 0000 0000"
@@ -985,7 +1017,7 @@ function PatientPortal({
                     </div>
                     <div>
                         <label className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2 block">Cardholder Name</label>
-                        <input 
+                        <input
                             type="text"
                             placeholder="FULL NAME"
                             className="w-full p-3 rounded-2xl bg-slate-950 border-2 border-transparent focus:border-blue-500 focus:bg-slate-950 outline-none font-bold transition-all text-sm uppercase text-slate-100"
@@ -996,7 +1028,7 @@ function PatientPortal({
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2 block">Expiry Date</label>
-                            <input 
+                            <input
                                 type="text"
                                 placeholder="MM/YY"
                                 maxLength="5"
@@ -1008,7 +1040,7 @@ function PatientPortal({
                         <div>
                             <label className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2 block">CVV</label>
                             <div className="relative">
-                                <input 
+                                <input
                                     type="password"
                                     placeholder="•••"
                                     maxLength="3"
@@ -1038,7 +1070,7 @@ function PatientPortal({
                     </span>
                   </div>
                 </div>
-                
+
                 <button
                   onClick={onConfirm}
                   disabled={!isCardValid}
@@ -1158,71 +1190,82 @@ function PatientPortal({
         </div>
       </div>
     </div>
-  );
+
+);
 }
 
 // --- Component: Admin Panel ---
 function AdminPanel({
-  doctors,
-  appointments,
-  onAdd,
-  onDelete,
-  onStatusChange,
-  isProcessing,
-  onLogout
+doctors,
+appointments,
+onAdd,
+onDelete,
+onStatusChange,
+isProcessing,
+onLogout,
+adminPin,
+adminPhrase,
+onUpdateSecurity
 }) {
-  const [showAdd, setShowAdd] = useState(false);
-  const [newDoc, setNewDoc] = useState({
-    name: "",
-    specialty: "General Physician",
-    gender: "Male",
-    experience: "",
-    fee: "",
-    location: "",
-    about: "",
-    availability: "",
-  });
+const [showAdd, setShowAdd] = useState(false);
+const [showSecurity, setShowSecurity] = useState(false);
+const [newDoc, setNewDoc] = useState({
+name: "",
+specialty: "General Physician",
+gender: "Male",
+experience: "",
+fee: "",
+location: "",
+about: "",
+availability: "",
+});
 
-  const stats = useMemo(() => {
-    const totalRev = appointments
-      .filter((a) => a.status !== "Cancelled")
-      .reduce((acc, curr) => acc + (Number(curr.doctor.fee) + 10), 0);
-    const completed = appointments.filter(
-      (a) => a.status === "Completed"
-    ).length;
-    return {
-      totalRev,
-      completed,
-      pending: appointments.filter((a) => a.status === "Upcoming").length,
-    };
-  }, [appointments]);
+const [secForm, setSecForm] = useState({ pin: adminPin, phrase: adminPhrase });
 
-  return (
-    <div className="space-y-10 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-100">
-            Executive Dashboard
-          </h1>
-          <p className="text-slate-500 font-medium">
-            Cloud Registry Monitoring
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-            <button
+const stats = useMemo(() => {
+const totalRev = appointments
+.filter((a) => a.status !== "Cancelled")
+.reduce((acc, curr) => acc + (Number(curr.doctor.fee) + 10), 0);
+const completed = appointments.filter(
+(a) => a.status === "Completed"
+).length;
+return {
+totalRev,
+completed,
+pending: appointments.filter((a) => a.status === "Upcoming").length,
+};
+}, [appointments]);
+
+return (
+<div className="space-y-10 animate-in fade-in duration-500">
+<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div>
+<h1 className="text-3xl font-black tracking-tight text-slate-100">
+Executive Dashboard
+</h1>
+<p className="text-slate-500 font-medium">
+Cloud Registry Monitoring
+</p>
+</div>
+<div className="flex items-center gap-3">
+<button
+onClick={() => setShowSecurity(true)}
+className="px-6 py-3 bg-slate-900 border border-slate-800 text-slate-400 rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-slate-800 transition-all" >
+<Settings size={16} /> Security Settings
+</button>
+<button
                 onClick={onLogout}
                 className="px-6 py-3 bg-slate-900 border border-slate-800 text-slate-400 rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-slate-800 transition-all"
             >
-                <Lock size={16} /> Lock Session
-            </button>
-            <button
-                onClick={() => setShowAdd(true)}
-                className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20"
-            >
-                <Plus size={20} /> Add Professional
-            </button>
-        </div>
-      </div>
+<Lock size={16} /> Lock Session
+</button>
+<button
+onClick={() => setShowAdd(true)}
+className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20" >
+<Plus size={20} /> Add Professional
+</button>
+</div>
+</div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard
@@ -1398,41 +1441,98 @@ function AdminPanel({
           </div>
         </div>
       )}
+
+      {showSecurity && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-[2.5rem] w-full max-w-md p-10 border border-slate-800 shadow-2xl animate-in zoom-in-95 relative border border-slate-800">
+            <button onClick={() => setShowSecurity(false)} className="absolute top-6 right-6 text-slate-500 hover:text-slate-200 transition-colors"><XCircle size={24} /></button>
+            <div className="mb-8">
+              <h2 className="text-xl font-black text-slate-100 flex items-center gap-3">
+                <Shield className="text-blue-500" /> Security Override
+              </h2>
+              <p className="text-xs font-medium text-slate-500 mt-2">Update your administrative credentials.</p>
+            </div>
+
+            <div className="space-y-6">
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">New 8-Digit PIN</label>
+                        <input
+                            type="password"
+                            maxLength="8"
+                            className="w-full p-4 rounded-xl bg-slate-950 border-2 border-slate-800 focus:border-blue-600 outline-none text-slate-100 font-mono tracking-widest"
+                            value={secForm.pin}
+                            onChange={(e) => setSecForm({...secForm, pin: e.target.value.replace(/\D/g, '')})}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">New Secret Phrase</label>
+                        <input
+                            type="text"
+                            className="w-full p-4 rounded-xl bg-slate-950 border-2 border-slate-800 focus:border-blue-600 outline-none text-slate-100 font-bold uppercase tracking-widest"
+                            value={secForm.phrase}
+                            onChange={(e) => setSecForm({...secForm, phrase: e.target.value.toUpperCase()})}
+                        />
+                    </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-yellow-900/10 border border-yellow-900/30 text-yellow-500/80 text-[10px] font-bold leading-relaxed">
+                    <AlertCircle className="inline mr-2" size={14} />
+                    Changing these codes will take effect immediately. Ensure you have memorized your new credentials before locking the session.
+                </div>
+
+                <button
+                    onClick={() => {
+                        if (secForm.pin.length === 8 && secForm.phrase) {
+                            onUpdateSecurity(secForm.pin, secForm.phrase);
+                            setShowSecurity(false);
+                        }
+                    }}
+                    disabled={secForm.pin.length !== 8 || !secForm.phrase}
+                    className="w-full py-4 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-500 shadow-xl shadow-blue-900/20 disabled:opacity-30"
+                >
+                    Save Encrypted Credentials
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  );
+
+);
 }
 
 // --- Utility Components ---
 function StatCard({ label, value, icon, color }) {
-  return (
-    <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-xl flex items-center gap-4">
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color}`}>
-        {React.cloneElement(icon, { size: 28 })}
-      </div>
-      <div>
-        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">
-          {label}
-        </p>
-        <p className="text-2xl font-black text-slate-100">{value}</p>
-      </div>
-    </div>
-  );
+return (
+<div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-xl flex items-center gap-4">
+<div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color}`}>
+{React.cloneElement(icon, { size: 28 })}
+</div>
+<div>
+<p className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">
+{label}
+</p>
+<p className="text-2xl font-black text-slate-100">{value}</p>
+</div>
+</div>
+);
 }
 
 function Input({ label, value, onChange, placeholder, type = "text", required = false }) {
-  return (
-    <div className="space-y-1.5 w-full">
-      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-        {label}
-      </label>
-      <input
-        type={type}
-        required={required}
-        placeholder={placeholder}
-        className="w-full p-3 rounded-xl bg-slate-950 border-2 border-transparent focus:border-blue-500 outline-none font-bold text-xs transition-all text-slate-100 placeholder:text-slate-700"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </div>
-  );
+return (
+<div className="space-y-1.5 w-full">
+<label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+{label}
+</label>
+<input
+type={type}
+required={required}
+placeholder={placeholder}
+className="w-full p-3 rounded-xl bg-slate-950 border-2 border-transparent focus:border-blue-500 outline-none font-bold text-xs transition-all text-slate-100 placeholder:text-slate-700"
+value={value}
+onChange={(e) => onChange(e.target.value)}
+/>
+</div>
+);
 }
