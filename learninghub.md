@@ -1,21 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import {
-getAuth,
-signInAnonymously,
-signInWithCustomToken,
-onAuthStateChanged
-} from 'firebase/auth';
-import {
-getFirestore,
-collection,
-addDoc,
-onSnapshot,
-query,
-doc,
-deleteDoc,
-serverTimestamp
-} from 'firebase/firestore';
 import {
 PlayCircle,
 BookOpen,
@@ -57,16 +40,11 @@ Layers,
 Globe
 } from 'lucide-react';
 
-// --- Firebase Configuration ---
-const firebaseConfig = JSON.parse(**firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof **app_id !== 'undefined' ? \_\_app_id : 'health-learning-hub';
-const apiKey = "";
-
 // --- Constants ---
 const ADMIN_PASSWORD = "admin123";
+const STORAGE_KEY = "health_hub_local_data";
+const apiKey = "";
+
 const CATEGORIES = [
 { id: 'all', name: 'All Topics', icon: <Filter className="w-4 h-4" /> },
 { id: 'heart', name: 'Heart Health', icon: <Heart className="w-4 h-4" /> },
@@ -220,8 +198,11 @@ className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all bord
 };
 
 export default function App() {
-const [user, setUser] = useState(null);
-const [resources, setResources] = useState([]);
+const [resources, setResources] = useState(() => {
+const saved = localStorage.getItem(STORAGE_KEY);
+return saved ? JSON.parse(saved) : [];
+});
+
 const [selectedCategory, setSelectedCategory] = useState('all');
 const [searchQuery, setSearchQuery] = useState('');
 const [selectedItem, setSelectedItem] = useState(null);
@@ -237,30 +218,10 @@ description: '', why: '', thumbnail: '', externalUrl: '', youtubeId: '',
 audience: 'Patients', level: 'Beginner', language: 'English'
 });
 
+// Persist data locally
 useEffect(() => {
-const initAuth = async () => {
-try {
-if (typeof **initial_auth_token !== 'undefined' && **initial_auth_token) {
-await signInWithCustomToken(auth, \_\_initial_auth_token);
-} else {
-await signInAnonymously(auth);
-}
-} catch (err) { console.error("Auth Error", err); }
-};
-initAuth();
-const unsubscribe = onAuthStateChanged(auth, setUser);
-return () => unsubscribe();
-}, []);
-
-useEffect(() => {
-if (!user) return;
-const resourcesRef = collection(db, 'artifacts', appId, 'public', 'data', 'resources');
-const unsubscribe = onSnapshot(query(resourcesRef), (snapshot) => {
-const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-setResources(data);
-}, (error) => console.error("Firestore Error", error));
-return () => unsubscribe();
-}, [user]);
+localStorage.setItem(STORAGE_KEY, JSON.stringify(resources));
+}, [resources]);
 
 const toggleSave = (id) => {
 setSavedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -296,25 +257,23 @@ finally { setIsGeneratingImage(false); }
 
 const handleAddResource = async (e) => {
 e.preventDefault();
-if (!user) return;
-try {
-const resourcesRef = collection(db, 'artifacts', appId, 'public', 'data', 'resources');
-await addDoc(resourcesRef, { ...newResource, createdAt: serverTimestamp() });
+const id = Date.now().toString();
+const itemToAdd = {
+...newResource,
+id,
+createdAt: new Date().toISOString()
+};
+setResources(prev => [itemToAdd, ...prev]);
 setNewResource({
 title: '', category: 'heart', type: 'video', source: '', duration: '', readTime: '',
 description: '', why: '', thumbnail: '', externalUrl: '', youtubeId: '',
 audience: 'Patients', level: 'Beginner', language: 'English'
 });
 setCurrentView('user');
-} catch (err) { console.error("Add Error", err); }
 };
 
-const deleteResource = async (id) => {
-if (!confirm("Are you sure you want to delete this resource permanently?")) return;
-try {
-const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'resources', id);
-await deleteDoc(docRef);
-} catch (err) { console.error("Delete Error", err); }
+const deleteResource = (id) => {
+setResources(prev => prev.filter(r => r.id !== id));
 };
 
 const filteredContent = useMemo(() => {
