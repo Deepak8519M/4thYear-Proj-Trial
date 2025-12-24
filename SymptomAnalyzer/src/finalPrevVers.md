@@ -1,39 +1,41 @@
 import React, { useState, useEffect } from "react";
 import {
-  Activity,
-  AlertCircle,
-  ChevronRight,
-  ChevronLeft,
-  Clipboard,
-  Info,
-  ShieldAlert,
-  CheckCircle2,
-  Stethoscope,
-  Clock,
-  ArrowRight,
-  User,
-  Heart,
-  Search,
-  RefreshCcw,
-  BookOpen,
-  Download,
-  Loader2,
-  Plus,
-  X,
-  Save,
+Activity,
+AlertCircle,
+ChevronRight,
+ChevronLeft,
+Clipboard,
+Info,
+ShieldAlert,
+CheckCircle2,
+Stethoscope,
+Clock,
+ArrowRight,
+User,
+Heart,
+Search,
+RefreshCcw,
+BookOpen,
+Download,
+Loader2,
+Plus,
+X,
+Save,
 } from "lucide-react";
 
-/**
- * VitalSense: AI Health Assessment System
- * Updated:
- * - Switched from Firebase Firestore to Browser LocalStorage to avoid billing/setup errors.
- * - Maintained wide layout and premium dark theme.
- * - AI analysis powered by Gemini 2.5 Flash.
- */
+/\*\*
+
+- VitalSense: AI Health Assessment System
+- Updated:
+- - Switched from Firebase Firestore to Browser LocalStorage to avoid billing/setup errors.
+- - Maintained wide layout and premium dark theme.
+- - AI analysis powered by Gemini 2.5 Flash.
+    \*/
 
 // --- Sub-components ---
 
 const ProgressBar = ({ step }) => (
+
   <div className="w-full h-1.5 bg-zinc-900 rounded-full mb-6 overflow-hidden">
     <div
       className="h-full bg-blue-500 transition-all duration-500 ease-out shadow-[0_0_12px_rgba(59,130,246,0.6)]"
@@ -43,6 +45,7 @@ const ProgressBar = ({ step }) => (
 );
 
 const Step0Disclaimer = ({ onNext }) => (
+
   <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
     <div className="p-3 bg-amber-950/20 border border-amber-900/40 rounded-xl flex items-start gap-3">
       <ShieldAlert className="text-amber-500 shrink-0 w-5 h-5" />
@@ -99,20 +102,22 @@ const Step0Disclaimer = ({ onNext }) => (
         If you have chest pain or trouble breathing, call 911 immediately.
       </p>
     </div>
+
   </div>
 );
 
 const Step1Profile = ({
-  formData,
-  setFormData,
-  commonConditions,
-  toggleMedicalHistory,
-  customInput,
-  setCustomInput,
-  addCustomCondition,
-  onNext,
-  onBack,
+formData,
+setFormData,
+commonConditions,
+toggleMedicalHistory,
+customInput,
+setCustomInput,
+addCustomCondition,
+onNext,
+onBack,
 }) => (
+
   <div className="animate-in fade-in duration-500">
     <h2 className="text-xl font-bold text-white mb-1">
       Tell us about yourself
@@ -238,16 +243,18 @@ const Step1Profile = ({
         Next
       </button>
     </div>
+
   </div>
 );
 
 const Step2Symptoms = ({
-  formData,
-  setFormData,
-  durations,
-  onNext,
-  onBack,
+formData,
+setFormData,
+durations,
+onNext,
+onBack,
 }) => (
+
   <div className="animate-in fade-in duration-500">
     <h2 className="text-xl font-bold text-white mb-1">
       Describe your symptoms
@@ -308,17 +315,19 @@ const Step2Symptoms = ({
         Next
       </button>
     </div>
+
   </div>
 );
 
 const Step3Severity = ({
-  formData,
-  setFormData,
-  onBack,
-  onAnalyze,
-  isAnalyzing,
-  error,
+formData,
+setFormData,
+onBack,
+onAnalyze,
+isAnalyzing,
+error,
 }) => (
+
   <div className="animate-in fade-in duration-500">
     <h2 className="text-xl font-bold text-white mb-1">Severity Level</h2>
     <p className="text-zinc-500 text-sm mb-10">
@@ -412,10 +421,12 @@ const Step3Severity = ({
         )}
       </button>
     </div>
+
   </div>
 );
 
 const ResultsDashboard = ({ result, onRestart, onDownload, isDownloading }) => (
+
   <div className="animate-in fade-in zoom-in-95 duration-700 pb-10">
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
       <div>
@@ -540,98 +551,99 @@ const ResultsDashboard = ({ result, onRestart, onDownload, isDownloading }) => (
         Restart Assessment
       </button>
     </div>
+
   </div>
 );
 
 // --- Main App Component ---
 
 const VitalSense = () => {
-  const [step, setStep] = useState(0);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [customInput, setCustomInput] = useState("");
+const [step, setStep] = useState(0);
+const [isAnalyzing, setIsAnalyzing] = useState(false);
+const [result, setResult] = useState(null);
+const [error, setError] = useState(null);
+const [isDownloading, setIsDownloading] = useState(false);
+const [customInput, setCustomInput] = useState("");
 
-  const [formData, setFormData] = useState({
-    age: "",
-    gender: "",
-    symptoms: "",
-    duration: "1-3 days",
-    severity: 5,
-    medicalHistory: [],
-  });
+const [formData, setFormData] = useState({
+age: "",
+gender: "",
+symptoms: "",
+duration: "1-3 days",
+severity: 5,
+medicalHistory: [],
+});
 
-  const apiKey = "AIzaSyD0so09z_kU5eO9xPTmgTnThVmrSx3YgPY"; // Use the Gemini API key here
-  const commonConditions = [
-    "Diabetes",
-    "Hypertension",
-    "Asthma",
-    "High Cholesterol",
-    "Heart Disease",
-  ];
-  const durations = ["< 24h", "1-3 days", "1 week", "2+ weeks", "Chronic"];
+const apiKey = ""; // Use the Gemini API key here
+const commonConditions = [
+"Diabetes",
+"Hypertension",
+"Asthma",
+"High Cholesterol",
+"Heart Disease",
+];
+const durations = ["< 24h", "1-3 days", "1 week", "2+ weeks", "Chronic"];
 
-  // --- LOCAL STORAGE PERSISTENCE ---
-  const STORAGE_KEY = "vitalsense_assessment_data";
+// --- LOCAL STORAGE PERSISTENCE ---
+const STORAGE_KEY = "vitalsense_assessment_data";
 
-  // Load Progress from Local Storage on Mount
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.formData) setFormData(parsed.formData);
-        if (parsed.result) setResult(parsed.result);
-        if (parsed.step) setStep(parsed.step);
-      } catch (e) {
-        console.error("Failed to parse local storage data");
-      }
-    }
-  }, []);
+// Load Progress from Local Storage on Mount
+useEffect(() => {
+const saved = localStorage.getItem(STORAGE_KEY);
+if (saved) {
+try {
+const parsed = JSON.parse(saved);
+if (parsed.formData) setFormData(parsed.formData);
+if (parsed.result) setResult(parsed.result);
+if (parsed.step) setStep(parsed.step);
+} catch (e) {
+console.error("Failed to parse local storage data");
+}
+}
+}, []);
 
-  // Save Progress to Local Storage whenever state changes
-  useEffect(() => {
-    const dataToSave = {
-      formData,
-      result,
-      step,
-      lastUpdated: new Date().toISOString(),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-  }, [formData, result, step]);
+// Save Progress to Local Storage whenever state changes
+useEffect(() => {
+const dataToSave = {
+formData,
+result,
+step,
+lastUpdated: new Date().toISOString(),
+};
+localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+}, [formData, result, step]);
 
-  const handleNext = () => setStep((prev) => prev + 1);
-  const handleBack = () => setStep((prev) => prev - 1);
+const handleNext = () => setStep((prev) => prev + 1);
+const handleBack = () => setStep((prev) => prev - 1);
 
-  const toggleMedicalHistory = (item) => {
-    setFormData((prev) => ({
-      ...prev,
-      medicalHistory: prev.medicalHistory.includes(item)
-        ? prev.medicalHistory.filter((i) => i !== item)
-        : [...prev.medicalHistory, item],
-    }));
-  };
+const toggleMedicalHistory = (item) => {
+setFormData((prev) => ({
+...prev,
+medicalHistory: prev.medicalHistory.includes(item)
+? prev.medicalHistory.filter((i) => i !== item)
+: [...prev.medicalHistory, item],
+}));
+};
 
-  const addCustomCondition = (e) => {
-    if (e) e.preventDefault();
-    const trimmed = customInput.trim();
-    if (trimmed && !formData.medicalHistory.includes(trimmed)) {
-      setFormData((prev) => ({
-        ...prev,
-        medicalHistory: [...prev.medicalHistory, trimmed],
-      }));
-      setCustomInput("");
-    }
-  };
+const addCustomCondition = (e) => {
+if (e) e.preventDefault();
+const trimmed = customInput.trim();
+if (trimmed && !formData.medicalHistory.includes(trimmed)) {
+setFormData((prev) => ({
+...prev,
+medicalHistory: [...prev.medicalHistory, trimmed],
+}));
+setCustomInput("");
+}
+};
 
-  const analyzeHealth = async () => {
-    setIsAnalyzing(true);
-    setError(null);
+const analyzeHealth = async () => {
+setIsAnalyzing(true);
+setError(null);
 
-    const systemPrompt = `You are a professional AI Health Assistant. Analyze user symptoms and provide a structured JSON response. 
+    const systemPrompt = `You are a professional AI Health Assistant. Analyze user symptoms and provide a structured JSON response.
     IMPORTANT: You are NOT a doctor. Do NOT provide diagnoses or prescriptions. Provide awareness and guidance.
-    
+
     Response Schema:
     {
       "summary": "Professional overview of reported symptoms",
@@ -686,15 +698,18 @@ const VitalSense = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  };
 
-  const downloadReport = () => {
-    setIsDownloading(true);
-    try {
-      const reportContent = `
+};
+
+const downloadReport = () => {
+setIsDownloading(true);
+try {
+const reportContent = `
 VITALSENSE HEALTH ASSESSMENT REPORT
 Generated on: ${new Date().toLocaleString()}
--------------------------------------------
+
+---
+
 USER PROFILE:
 Age: ${formData.age}
 Gender: ${formData.gender}
@@ -718,10 +733,11 @@ ${result.lifestyleAdvice.map((a) => `- ${a}`).join("\n")}
 RECOMMENDED TESTS TO DISCUSS WITH DOCTOR:
 ${result.medicalTests.map((t) => `- ${t}`).join("\n")}
 
--------------------------------------------
+---
+
 DISCLAIMER: This report is generated by AI for informational purposes only.
 It is NOT a medical diagnosis. Please consult a healthcare professional.
-      `;
+`;
 
       const blob = new Blob([reportContent], { type: "text/plain" });
       const url = window.URL.createObjectURL(blob);
@@ -739,41 +755,42 @@ It is NOT a medical diagnosis. Please consult a healthcare professional.
     } finally {
       setTimeout(() => setIsDownloading(false), 1000);
     }
-  };
 
-  const handleRestart = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setFormData({
-      age: "",
-      gender: "",
-      symptoms: "",
-      duration: "1-3 days",
-      severity: 5,
-      medicalHistory: [],
-    });
-    setResult(null);
-    setStep(0);
-  };
+};
 
-  return (
-    <div className="min-h-screen bg-black p-4 sm:p-6 font-sans antialiased text-white selection:bg-blue-500/40 flex flex-col items-center">
-      <div className="w-full max-w-6xl py-4 pb-12">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="bg-blue-600 p-2.5 rounded-2xl shadow-[0_0_20px_rgba(37,99,235,0.4)] ring-4 ring-blue-600/10">
-            <Activity className="text-white w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-white tracking-tight leading-none">
-              VitalSense
-            </h1>
-            <div className="flex items-center gap-2 mt-1.5">
-              <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.9)]" />
-              <p className="text-[9px] uppercase tracking-[0.3em] font-black text-blue-500">
-                AI Assessment Core
-              </p>
-            </div>
-          </div>
-        </div>
+const handleRestart = () => {
+localStorage.removeItem(STORAGE_KEY);
+setFormData({
+age: "",
+gender: "",
+symptoms: "",
+duration: "1-3 days",
+severity: 5,
+medicalHistory: [],
+});
+setResult(null);
+setStep(0);
+};
+
+return (
+<div className="min-h-screen bg-black p-4 sm:p-6 font-sans antialiased text-white selection:bg-blue-500/40 flex flex-col items-center">
+<div className="w-full max-w-6xl py-4 pb-12">
+<div className="flex items-center gap-4 mb-8">
+<div className="bg-blue-600 p-2.5 rounded-2xl shadow-[0_0_20px_rgba(37,99,235,0.4)] ring-4 ring-blue-600/10">
+<Activity className="text-white w-6 h-6" />
+</div>
+<div>
+<h1 className="text-2xl font-black text-white tracking-tight leading-none">
+VitalSense
+</h1>
+<div className="flex items-center gap-2 mt-1.5">
+<div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.9)]" />
+<p className="text-[9px] uppercase tracking-[0.3em] font-black text-blue-500">
+AI Assessment Core
+</p>
+</div>
+</div>
+</div>
 
         <main className="relative mx-auto max-w-4xl">
           {step > 0 && step < 4 && <ProgressBar step={step} />}
@@ -852,7 +869,8 @@ It is NOT a medical diagnosis. Please consult a healthcare professional.
         )}
       </div>
     </div>
-  );
+
+);
 };
 
 export default VitalSense;
