@@ -562,7 +562,7 @@ const VitalSense = () => {
     medicalHistory: [],
   });
 
-  const apiKey = "AIzaSyD0so09z_kU5eO9xPTmgTnThVmrSx3YgPY"; // Use the Gemini API key here
+  const apiKey = "AIzaSyB5-GI34GVlZoDEhP8SAK04Q47yr8gi2fc"; // Use the Gemini API key here
   const commonConditions = [
     "Diabetes",
     "Hypertension",
