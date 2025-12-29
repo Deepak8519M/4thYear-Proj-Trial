@@ -34,14 +34,9 @@
         -webkit-text-fill-color: transparent;
       }
 
-      .nav-link {
-        cursor: pointer;
-        transition: color 0.3s ease;
-        position: relative;
-      }
-
       .nav-link:hover {
         color: #ffffff;
+        transition: color 0.3s ease;
       }
 
       /* Custom Scrollbar */
@@ -60,7 +55,7 @@
       }
 
       .hero-glow {
-        position: fixed;
+        position: absolute;
         top: -10%;
         left: 50%;
         transform: translateX(-50%);
@@ -68,39 +63,43 @@
         height: 400px;
         background: radial-gradient(
           circle,
-          rgba(99, 102, 241, 0.1) 0%,
+          rgba(99, 102, 241, 0.15) 0%,
           rgba(0, 0, 0, 0) 70%
         );
         z-index: -1;
         filter: blur(60px);
-        pointer-events: none;
       }
 
-      /* Essential fix for modal visibility */
       .view-hidden {
         display: none !important;
       }
 
-      section {
-        padding-top: 80px;
-        padding-bottom: 80px;
+      .accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+      }
+      .accordion-item.active .accordion-content {
+        max-height: 200px;
+      }
+      .accordion-item.active .accordion-icon {
+        transform: rotate(180deg);
       }
     </style>
   </head>
   <body class="overflow-x-hidden">
     <div class="hero-glow"></div>
 
-    <!-- Navigation -->
-    <nav
-      class="sticky top-0 z-40 bg-[#0a0a0c]/80 backdrop-blur-lg border-b border-white/5"
-    >
-      <div
-        class="flex items-center justify-between px-6 py-5 max-w-7xl mx-auto"
+    <!-- Main Content View -->
+    <div id="main-view">
+      <!-- Navigation -->
+      <nav
+        class="sticky top-0 z-40 bg-[#0a0a0c]/80 backdrop-blur-md flex items-center justify-between px-6 py-5 max-w-7xl mx-auto border-b border-white/5"
       >
         <div class="flex items-center gap-8">
           <a
-            href="#home"
-            class="flex items-center gap-2 font-bold text-xl tracking-tight cursor-pointer"
+            href="#"
+            class="flex items-center gap-2 font-bold text-xl tracking-tight"
           >
             <div
               class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center"
@@ -114,88 +113,144 @@
           >
             <a href="#solutions" class="nav-link">Solutions</a>
             <a href="#diagnostics" class="nav-link">Diagnostics</a>
-            <a href="#research" class="nav-link">Research</a>
             <a href="#pricing" class="nav-link">Pricing</a>
-            <a href="#about" class="nav-link">About</a>
+            <a href="#research" class="nav-link">Research</a>
+            <a href="#faq" class="nav-link">FAQ</a>
           </div>
         </div>
         <div class="flex items-center gap-4">
           <button
-            onclick="toggleModal('signin', true)"
+            onclick="toggleView('signin')"
             class="text-sm text-zinc-400 hover:text-white px-4 py-2 transition-all"
           >
             Sign In
           </button>
           <button
-            onclick="window.location.href='#contact'"
             class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg shadow-indigo-500/20 transition-all"
           >
-            Contact Sales
+            Start Free Trial
           </button>
         </div>
-      </div>
-    </nav>
+      </nav>
 
-    <!-- MAIN PAGE CONTENT (SINGLE PAGE) -->
-    <main>
-      <!-- HOME / HERO SECTION -->
-      <section id="home" class="pt-24 pb-16 px-6">
-        <div class="max-w-4xl mx-auto text-center">
-          <div
-            class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/50 border border-zinc-800 text-xs font-medium text-zinc-400 mb-8"
-          >
-            <span
-              class="bg-indigo-500 w-1.5 h-1.5 rounded-full animate-pulse"
-            ></span>
-            New: AI-Driven Predictive Care Analytics 3.0
-          </div>
-          <h1
-            class="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-[1.1]"
-          >
-            <span class="gradient-text">Intelligent care</span><br />
-            for every patient.
-          </h1>
-          <p
-            class="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
-          >
-            The next-generation health platform to manage clinical workflows,
-            patient data, and AI diagnostics in one secure interface.
-          </p>
-          <div
-            class="flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
-            <button
-              class="w-full sm:w-auto bg-white text-black font-semibold px-8 py-3.5 rounded-full hover:bg-zinc-200 transition-all text-sm"
-            >
-              Register Clinic
-            </button>
-            <button
-              class="w-full sm:w-auto bg-zinc-900/50 border border-zinc-800 text-white font-semibold px-8 py-3.5 rounded-full hover:bg-zinc-800 transition-all text-sm flex items-center justify-center gap-2"
-            >
-              <i class="fas fa-play text-[10px]"></i> Product Tour
-            </button>
-          </div>
+      <!-- Hero Section -->
+      <header id="home" class="max-w-4xl mx-auto pt-24 pb-16 px-6 text-center">
+        <div
+          class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/50 border border-zinc-800 text-xs font-medium text-zinc-400 mb-8"
+        >
+          <span
+            class="bg-indigo-500 w-1.5 h-1.5 rounded-full animate-pulse"
+          ></span>
+          New: AI-Driven Predictive Care Analytics 3.0
         </div>
-      </section>
+        <h1
+          class="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-[1.1]"
+        >
+          <span class="gradient-text">Intelligent care</span><br />
+          for every patient.
+        </h1>
+        <p
+          class="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
+        >
+          The next-generation health platform to manage clinical workflows,
+          patient data, and AI diagnostics in one secure interface.
+        </p>
+        <div
+          class="flex flex-col sm:flex-row items-center justify-center gap-4"
+        >
+          <button
+            class="w-full sm:w-auto bg-white text-black font-semibold px-8 py-3.5 rounded-full hover:bg-zinc-200 transition-all text-sm"
+          >
+            Register Clinic
+          </button>
+          <button
+            class="w-full sm:w-auto bg-zinc-900/50 border border-zinc-800 text-white font-semibold px-8 py-3.5 rounded-full hover:bg-zinc-800 transition-all text-sm flex items-center justify-center gap-2"
+          >
+            <i class="fas fa-play text-[10px]"></i> Product Tour
+          </button>
+        </div>
+      </header>
 
-      <!-- DASHBOARD UI SECTION (MUST REMAIN AFTER HERO) -->
-      <section id="dashboard" class="max-w-6xl mx-auto px-6 mb-16 relative">
+      <!-- Main Dashboard Preview -->
+      <section class="max-w-6xl mx-auto px-6 mb-32 relative">
         <div
           class="relative rounded-2xl overflow-hidden glass-card p-2 md:p-4 shadow-2xl shadow-indigo-500/5 border border-white/10"
         >
           <div
-            class="flex bg-zinc-950 rounded-xl overflow-hidden min-h-[500px] border border-white/5"
+            class="flex bg-zinc-950 rounded-xl overflow-hidden min-h-[500px] md:min-h-[700px] border border-white/5"
           >
-            <!-- Internal Dashboard Mockup -->
-            <main class="flex-1 p-6 md:p-10">
-              <div class="flex items-center justify-between mb-8">
-                <h2 class="text-xl font-bold">Clinical Overview</h2>
-                <div class="flex gap-2">
-                  <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                  <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            <!-- Sidebar -->
+            <aside
+              class="hidden md:flex w-64 bg-zinc-900/50 border-r border-white/5 flex-col p-6"
+            >
+              <div class="flex items-center gap-3 mb-10">
+                <div
+                  class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400"
+                >
+                  <i class="fas fa-hospital-user"></i>
+                </div>
+                <span class="font-semibold text-sm">Clinic Admin</span>
+              </div>
+              <nav class="space-y-4">
+                <div
+                  class="text-[11px] font-bold text-zinc-500 uppercase tracking-widest"
+                >
+                  Medical
+                </div>
+                <div
+                  class="flex items-center gap-3 text-white text-sm font-medium p-2 bg-zinc-800/50 rounded-lg"
+                >
+                  <i class="fas fa-notes-medical text-zinc-400"></i> Patients
+                </div>
+                <div
+                  class="flex items-center gap-3 text-zinc-400 text-sm font-medium p-2 hover:bg-zinc-800/30 rounded-lg transition-all cursor-pointer"
+                >
+                  <i class="fas fa-calendar-check"></i> Appointments
+                </div>
+                <div
+                  class="flex items-center gap-3 text-zinc-400 text-sm font-medium p-2 hover:bg-zinc-800/30 rounded-lg transition-all cursor-pointer"
+                >
+                  <i class="fas fa-microscope"></i> Lab Results
+                </div>
+                <div
+                  class="mt-8 text-[11px] font-bold text-zinc-500 uppercase tracking-widest"
+                >
+                  Settings
+                </div>
+                <div
+                  class="flex items-center gap-3 text-zinc-400 text-sm font-medium p-2 hover:bg-zinc-800/30 rounded-lg transition-all cursor-pointer"
+                >
+                  <i class="fas fa-user-shield"></i> HIPAA Compliance
+                </div>
+              </nav>
+            </aside>
+
+            <!-- Dashboard Content -->
+            <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+              <div class="flex items-center justify-between mb-10">
+                <div>
+                  <h2 class="text-2xl font-bold text-white">
+                    Clinical Analytics
+                  </h2>
+                  <p class="text-zinc-500 text-sm">
+                    Real-time health monitoring and facility stats.
+                  </p>
+                </div>
+                <div class="flex gap-3">
+                  <button
+                    class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400"
+                  >
+                    <i class="fas fa-search"></i>
+                  </button>
+                  <button
+                    class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 relative"
+                  >
+                    <i class="fas fa-clipboard-list"></i>
+                  </button>
                 </div>
               </div>
+
+              <!-- Healthcare Stats Cards -->
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 <div
                   class="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800"
@@ -206,6 +261,9 @@
                     class="text-emerald-400 text-xs font-semibold flex items-center gap-1"
                   >
                     <i class="fas fa-arrow-up"></i> +8.1%
+                    <span class="text-zinc-500 font-normal ml-1"
+                      >monthly growth</span
+                    >
                   </div>
                 </div>
                 <div
@@ -216,7 +274,10 @@
                   <div
                     class="text-emerald-400 text-xs font-semibold flex items-center gap-1"
                   >
-                    <i class="fas fa-check-circle"></i> High Adherence
+                    <i class="fas fa-check-circle"></i> High
+                    <span class="text-zinc-500 font-normal ml-1"
+                      >adherence rate</span
+                    >
                   </div>
                 </div>
                 <div
@@ -226,200 +287,277 @@
                   <h3 class="text-3xl font-bold mb-4">88.2%</h3>
                   <div class="w-full bg-zinc-800 h-1.5 rounded-full mt-2">
                     <div
-                      class="bg-indigo-500 h-full w-[88.2%] rounded-full shadow-[0_0_10px_#6366f1]"
+                      class="bg-indigo-500 h-full w-[88.2%] rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]"
                     ></div>
                   </div>
                 </div>
               </div>
+
+              <!-- Treatment Chart Mockup -->
               <div
-                class="h-48 bg-zinc-900/30 rounded-2xl border border-zinc-800 p-6 flex items-end justify-between gap-4"
+                class="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800 h-64 flex flex-col justify-end gap-2"
               >
-                <div class="w-full bg-indigo-500/20 h-12 rounded-t-lg"></div>
-                <div class="w-full bg-indigo-500/30 h-24 rounded-t-lg"></div>
-                <div
-                  class="w-full bg-indigo-500/50 h-32 rounded-t-lg shadow-lg shadow-indigo-500/20"
-                ></div>
-                <div class="w-full bg-indigo-500/20 h-16 rounded-t-lg"></div>
-                <div class="w-full bg-indigo-500/40 h-28 rounded-t-lg"></div>
+                <p
+                  class="text-zinc-500 text-xs mb-4 uppercase font-bold tracking-widest"
+                >
+                  Recovery Success Metrics
+                </p>
+                <div class="flex justify-between items-end h-40 gap-2 px-4">
+                  <div class="w-full bg-indigo-500/20 rounded-t-lg h-24"></div>
+                  <div class="w-full bg-indigo-500/20 rounded-t-lg h-32"></div>
+                  <div class="w-full bg-indigo-500/40 rounded-t-lg h-16"></div>
+                  <div
+                    class="w-full bg-indigo-500/60 rounded-t-lg h-40 shadow-lg shadow-indigo-500/20"
+                  ></div>
+                  <div class="w-full bg-indigo-500/30 rounded-t-lg h-28"></div>
+                  <div class="w-full bg-indigo-500/20 rounded-t-lg h-20"></div>
+                  <div class="w-full bg-indigo-500/40 rounded-t-lg h-36"></div>
+                </div>
               </div>
             </main>
           </div>
         </div>
+        <div
+          class="absolute -bottom-10 -right-10 w-64 h-64 bg-indigo-600/10 blur-[100px] rounded-full z-[-1]"
+        ></div>
       </section>
 
-      <!-- SOLUTIONS SECTION -->
-      <section id="solutions" class="px-6 max-w-7xl mx-auto">
-        <h2
-          class="text-4xl md:text-5xl font-bold mb-12 text-center gradient-text"
+      <!-- Trusted By Medical Institutions -->
+      <section class="max-w-7xl mx-auto px-6 mb-32 text-center">
+        <p
+          class="text-zinc-500 text-sm font-semibold mb-10 tracking-widest uppercase"
         >
-          Integrated Healthcare Solutions
-        </h2>
-        <div class="grid md:grid-cols-2 gap-8">
-          <div
-            class="p-10 glass-card rounded-3xl border border-white/10 hover:border-indigo-500/50 transition-all group"
-          >
-            <i
-              class="fas fa-hospital text-3xl text-indigo-400 mb-6 group-hover:scale-110 transition-transform"
-            ></i>
-            <h3 class="text-2xl font-bold mb-4">Clinic Administration</h3>
-            <p class="text-zinc-400 mb-6">
-              Automate patient scheduling, billing, and resource allocation.
-              Reduce administrative overhead by up to 45% with our AI-powered
-              scheduler.
-            </p>
-            <button
-              class="text-indigo-400 font-semibold hover:text-white transition-all flex items-center gap-2"
-            >
-              Learn more <i class="fas fa-chevron-right text-xs"></i>
-            </button>
+          Adopted by Leading Medical Institutions
+        </p>
+        <div
+          class="flex flex-wrap justify-center items-center gap-12 md:gap-20 opacity-50 grayscale"
+        >
+          <div class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-clinic-medical"></i> Mayo Clinic
           </div>
-          <div
-            class="p-10 glass-card rounded-3xl border border-white/10 hover:border-emerald-500/50 transition-all group"
-          >
-            <i
-              class="fas fa-dna text-3xl text-emerald-400 mb-6 group-hover:scale-110 transition-transform"
-            ></i>
-            <h3 class="text-2xl font-bold mb-4">Precision Medicine</h3>
-            <p class="text-zinc-400 mb-6">
-              Utilize genomic data and patient history to create highly
-              personalized treatment plans with predictable outcomes.
-            </p>
-            <button
-              class="text-emerald-400 font-semibold hover:text-white transition-all flex items-center gap-2"
-            >
-              Explore tech <i class="fas fa-chevron-right text-xs"></i>
-            </button>
+          <div class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-heart"></i> NHS
+          </div>
+          <div class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-flask"></i> Pfizer
+          </div>
+          <div class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-hospital"></i> Kaiser
+          </div>
+          <div class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-user-md"></i> BlueCross
           </div>
         </div>
       </section>
 
-      <!-- DIAGNOSTICS SECTION -->
+      <!-- Healthcare Features -->
       <section
-        id="diagnostics"
-        class="px-6 max-w-7xl mx-auto text-center bg-zinc-950/30"
+        id="features"
+        class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-8 mb-32"
       >
-        <div class="mb-16">
-          <h2 class="text-4xl md:text-6xl font-bold mb-6 gradient-text">
-            Advanced AI Diagnostics
-          </h2>
-          <p class="text-zinc-400 text-lg max-w-3xl mx-auto">
-            State-of-the-art neural networks trained on millions of clinical
-            cases to provide 99.8% accurate early detection.
+        <div
+          class="p-8 rounded-3xl glass-card border-white/5 group transition-all hover:bg-white/5"
+        >
+          <div
+            class="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-6"
+          >
+            <i class="fas fa-brain text-xl"></i>
+          </div>
+          <h4 class="text-xl font-bold mb-4">AI Diagnostics</h4>
+          <p class="text-zinc-400 leading-relaxed text-sm">
+            Advanced machine learning models to assist in early detection and
+            diagnosis of chronic conditions.
           </p>
         </div>
-        <div class="grid md:grid-cols-4 gap-6">
+        <div
+          class="p-8 rounded-3xl glass-card border-white/5 group transition-all hover:bg-white/5"
+        >
           <div
-            class="p-6 glass-card rounded-2xl hover:bg-white/5 transition-all"
+            class="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-6"
           >
-            <i class="fas fa-lungs text-2xl mb-4 text-blue-400"></i>
-            <h4 class="font-bold mb-2">Pulmonary</h4>
-            <p class="text-xs text-zinc-500">
-              Automated X-ray analysis for early stage detection.
+            <i class="fas fa-file-medical-alt text-xl"></i>
+          </div>
+          <h4 class="text-xl font-bold mb-4">Secure EMR</h4>
+          <p class="text-zinc-400 leading-relaxed text-sm">
+            Fully encrypted Electronic Medical Records ensuring patient privacy
+            and HIPAA/GDPR compliance.
+          </p>
+        </div>
+        <div
+          class="p-8 rounded-3xl glass-card border-white/5 group transition-all hover:bg-white/5"
+        >
+          <div
+            class="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-400 mb-6"
+          >
+            <i class="fas fa-laptop-medical text-xl"></i>
+          </div>
+          <h4 class="text-xl font-bold mb-4">Telehealth Suite</h4>
+          <p class="text-zinc-400 leading-relaxed text-sm">
+            Seamless video consultations integrated directly with patient charts
+            and pharmacy workflows.
+          </p>
+        </div>
+      </section>
+
+      <!-- Solutions/Specialties Section -->
+      <section id="solutions" class="max-w-7xl mx-auto px-6 mb-32">
+        <div class="text-center mb-16">
+          <h2 class="text-4xl md:text-5xl font-bold mb-6 gradient-text">
+            Clinical Solutions
+          </h2>
+          <p class="text-zinc-400 max-w-2xl mx-auto">
+            Tailored AI modules designed for specialized medical departments,
+            improving patient outcomes across the board.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div
+            class="p-6 rounded-2xl glass-card border-white/5 hover:border-indigo-500/50 transition-colors"
+          >
+            <div class="text-indigo-400 text-3xl mb-4">
+              <i class="fas fa-lungs"></i>
+            </div>
+            <h5 class="font-bold text-lg mb-2">Pulmonology</h5>
+            <p class="text-zinc-500 text-sm">
+              Automated lung scan analysis for early detection of respiratory
+              ailments.
             </p>
           </div>
           <div
-            class="p-6 glass-card rounded-2xl hover:bg-white/5 transition-all"
+            class="p-6 rounded-2xl glass-card border-white/5 hover:border-indigo-500/50 transition-colors"
           >
-            <i class="fas fa-brain text-2xl mb-4 text-purple-400"></i>
-            <h4 class="font-bold mb-2">Neurological</h4>
-            <p class="text-xs text-zinc-500">
-              Cognitive pattern recognition for early Alzheimers.
+            <div class="text-indigo-400 text-3xl mb-4">
+              <i class="fas fa-microscope"></i>
+            </div>
+            <h5 class="font-bold text-lg mb-2">Oncology</h5>
+            <p class="text-zinc-500 text-sm">
+              Pattern recognition for tumor identification with 99.8% precision.
             </p>
           </div>
           <div
-            class="p-6 glass-card rounded-2xl hover:bg-white/5 transition-all"
+            class="p-6 rounded-2xl glass-card border-white/5 hover:border-indigo-500/50 transition-colors"
           >
-            <i class="fas fa-eye text-2xl mb-4 text-amber-400"></i>
-            <h4 class="font-bold mb-2">Ophthalmology</h4>
-            <p class="text-xs text-zinc-500">
-              Retinal scan processing for diabetic retinopathy.
+            <div class="text-indigo-400 text-3xl mb-4">
+              <i class="fas fa-heartbeat"></i>
+            </div>
+            <h5 class="font-bold text-lg mb-2">Cardiology</h5>
+            <p class="text-zinc-500 text-sm">
+              Real-time ECG monitoring and cardiac event prediction systems.
             </p>
           </div>
           <div
-            class="p-6 glass-card rounded-2xl hover:bg-white/5 transition-all"
+            class="p-6 rounded-2xl glass-card border-white/5 hover:border-indigo-500/50 transition-colors"
           >
-            <i class="fas fa-heartbeat text-2xl mb-4 text-red-400"></i>
-            <h4 class="font-bold mb-2">Cardiology</h4>
-            <p class="text-xs text-zinc-500">
-              Real-time ECG analysis and stroke prediction.
+            <div class="text-indigo-400 text-3xl mb-4">
+              <i class="fas fa-bone"></i>
+            </div>
+            <h5 class="font-bold text-lg mb-2">Orthopedics</h5>
+            <p class="text-zinc-500 text-sm">
+              Advanced bone density analysis and fracture risk assessments.
             </p>
           </div>
         </div>
       </section>
 
-      <!-- RESEARCH SECTION -->
-      <section id="research" class="px-6 max-w-7xl mx-auto">
-        <div class="flex flex-col md:flex-row gap-16 items-center">
-          <div class="flex-1">
-            <h2 class="text-4xl font-bold mb-6">
-              Empowering Biomedical Research
-            </h2>
-            <p class="text-zinc-400 mb-8 leading-relaxed text-lg">
-              VitaCore AI provides researchers with anonymized datasets and
-              high-compute environments to accelerate drug discovery and
-              clinical trials.
+      <!-- Diagnostics/How it Works Section -->
+      <section id="diagnostics" class="max-w-7xl mx-auto px-6 mb-32">
+        <div class="grid md:grid-cols-2 gap-16 items-center">
+          <div>
+            <h2 class="text-4xl font-bold mb-6">How it works</h2>
+            <p class="text-zinc-400 mb-8">
+              VitaCore AI seamlessly integrates into your existing clinic
+              workflow without disruption. Our engine connects to your EMR,
+              analyzes data in real-time, and provides actionable clinical
+              insights.
             </p>
-            <ul class="space-y-4">
-              <li class="flex items-center gap-3 text-zinc-300">
-                <i class="fas fa-check-circle text-indigo-500"></i> Federated
-                Learning Models
-              </li>
-              <li class="flex items-center gap-3 text-zinc-300">
-                <i class="fas fa-check-circle text-indigo-500"></i> HIPAA
-                Compliant Sandboxes
-              </li>
-              <li class="flex items-center gap-3 text-zinc-300">
-                <i class="fas fa-check-circle text-indigo-500"></i>
-                GPU-Accelerated Simulations
-              </li>
-            </ul>
-          </div>
-          <div class="flex-1 w-full">
-            <div
-              class="glass-card p-8 rounded-3xl border border-white/5 relative overflow-hidden"
-            >
-              <div class="absolute top-0 right-0 p-4 opacity-20">
-                <i class="fas fa-microscope text-9xl"></i>
+            <div class="space-y-6">
+              <div class="flex gap-4">
+                <div
+                  class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm"
+                >
+                  1
+                </div>
+                <div>
+                  <h6 class="font-bold mb-1">Seamless Data Integration</h6>
+                  <p class="text-zinc-500 text-sm">
+                    Connect your hospital data via secure FHIR APIs.
+                  </p>
+                </div>
               </div>
-              <h4
-                class="text-zinc-500 uppercase tracking-widest text-xs font-bold mb-6"
+              <div class="flex gap-4">
+                <div
+                  class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm"
+                >
+                  2
+                </div>
+                <div>
+                  <h6 class="font-bold mb-1">AI Processing & Analysis</h6>
+                  <p class="text-zinc-500 text-sm">
+                    Our proprietary models process clinical datasets in seconds.
+                  </p>
+                </div>
+              </div>
+              <div class="flex gap-4">
+                <div
+                  class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm"
+                >
+                  3
+                </div>
+                <div>
+                  <h6 class="font-bold mb-1">Clinical Insight Reports</h6>
+                  <p class="text-zinc-500 text-sm">
+                    Actionable diagnostic reports delivered directly to the
+                    physician.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="relative">
+            <div
+              class="aspect-square glass-card rounded-3xl overflow-hidden border border-white/10 p-8 flex items-center justify-center"
+            >
+              <div
+                class="relative w-full h-full border-2 border-dashed border-indigo-500/30 rounded-full flex items-center justify-center animate-[spin_20s_linear_infinite]"
               >
-                Current Publication
-              </h4>
-              <h3 class="text-2xl font-bold mb-4">
-                Neural Architecture in Rare Disease Detection
-              </h3>
-              <p class="text-sm text-zinc-400 mb-6">
-                Published in Nature Medicine, Jan 2024. Analyzing 15,000 rare
-                case files with transformer models.
-              </p>
-              <button
-                class="bg-white text-black text-sm font-bold px-6 py-2.5 rounded-full hover:bg-zinc-200 transition-all"
-              >
-                Download PDF
-              </button>
+                <div
+                  class="absolute -top-4 bg-indigo-600 p-2 rounded-lg text-white"
+                >
+                  <i class="fas fa-shield-virus"></i>
+                </div>
+                <div
+                  class="absolute -bottom-4 bg-indigo-600 p-2 rounded-lg text-white"
+                >
+                  <i class="fas fa-file-medical"></i>
+                </div>
+              </div>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div
+                  class="w-32 h-32 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-indigo-500/50"
+                >
+                  <i class="fas fa-brain text-5xl"></i>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- PRICING SECTION -->
-      <section id="pricing" class="px-6 max-w-7xl mx-auto bg-zinc-950/30">
+      <!-- Pricing Section -->
+      <section id="pricing" class="max-w-7xl mx-auto px-6 mb-32">
         <div class="text-center mb-16">
-          <h2 class="text-4xl font-bold mb-4">
-            Scalable Plans for Any Facility
+          <h2 class="text-4xl md:text-5xl font-bold mb-6 gradient-text">
+            Simple, Scalable Pricing
           </h2>
-          <p class="text-zinc-500">
-            Transparent pricing for clinics, hospitals, and research labs.
+          <p class="text-zinc-400">
+            Choose the plan that fits your facility's specific needs.
           </p>
         </div>
         <div class="grid md:grid-cols-3 gap-8">
-          <div
-            class="p-8 glass-card rounded-3xl border border-white/5 flex flex-col"
-          >
-            <h3 class="text-xl font-bold mb-2">Clinic Solo</h3>
+          <div class="p-8 rounded-3xl glass-card border-white/5 flex flex-col">
+            <h5 class="text-xl font-bold mb-4">Clinic Lite</h5>
             <p class="text-4xl font-bold mb-6">
-              $199<span class="text-lg font-normal text-zinc-500">/mo</span>
+              $199<span class="text-sm font-normal text-zinc-500">/month</span>
             </p>
             <ul class="space-y-4 mb-8 flex-1 text-sm text-zinc-400">
               <li>
@@ -427,31 +565,34 @@
                 patients
               </li>
               <li>
-                <i class="fas fa-check text-indigo-400 mr-2"></i> Core AI
+                <i class="fas fa-check text-indigo-400 mr-2"></i> Standard EMR
+                Sync
+              </li>
+              <li>
+                <i class="fas fa-check text-indigo-400 mr-2"></i> Basic AI
                 Diagnostics
               </li>
               <li>
-                <i class="fas fa-check text-indigo-400 mr-2"></i> Standard EMR
-                integration
+                <i class="fas fa-check text-indigo-400 mr-2"></i> Email Support
               </li>
             </ul>
             <button
-              class="w-full py-3 rounded-full border border-white/10 hover:bg-white/5 transition-all font-bold text-sm"
+              class="w-full py-3 rounded-full border border-white/10 hover:bg-white/5 transition-colors font-bold text-sm"
             >
-              Get Started
+              Choose Plan
             </button>
           </div>
           <div
-            class="p-8 glass-card rounded-3xl border-indigo-500/50 bg-indigo-500/5 shadow-2xl shadow-indigo-500/10 flex flex-col relative scale-105"
+            class="p-8 rounded-3xl glass-card border-indigo-500/50 bg-indigo-500/5 flex flex-col relative"
           >
             <div
-              class="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+              class="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 px-4 py-1 rounded-full text-[10px] font-bold uppercase"
             >
               Most Popular
             </div>
-            <h3 class="text-xl font-bold mb-2">Hospital Network</h3>
+            <h5 class="text-xl font-bold mb-4">Professional</h5>
             <p class="text-4xl font-bold mb-6">
-              $899<span class="text-lg font-normal text-zinc-500">/mo</span>
+              $599<span class="text-sm font-normal text-zinc-500">/month</span>
             </p>
             <ul class="space-y-4 mb-8 flex-1 text-sm text-zinc-400">
               <li>
@@ -459,44 +600,47 @@
                 patients
               </li>
               <li>
-                <i class="fas fa-check text-indigo-400 mr-2"></i> Full
-                Diagnostic Suite
+                <i class="fas fa-check text-indigo-400 mr-2"></i> Real-time EMR
+                Integration
               </li>
               <li>
-                <i class="fas fa-check text-indigo-400 mr-2"></i> Telehealth API
+                <i class="fas fa-check text-indigo-400 mr-2"></i> Advanced
+                Specialty Modules
               </li>
               <li>
-                <i class="fas fa-check text-indigo-400 mr-2"></i> 24/7 Priority
+                <i class="fas fa-check text-indigo-400 mr-2"></i> Priority 24/7
                 Support
               </li>
             </ul>
             <button
-              class="w-full py-3 rounded-full bg-indigo-600 hover:bg-indigo-500 transition-all font-bold text-sm shadow-lg shadow-indigo-500/20"
+              class="w-full py-3 rounded-full bg-indigo-600 hover:bg-indigo-500 transition-colors font-bold text-sm"
             >
-              Select Plan
+              Choose Plan
             </button>
           </div>
-          <div
-            class="p-8 glass-card rounded-3xl border border-white/5 flex flex-col"
-          >
-            <h3 class="text-xl font-bold mb-2">Enterprise Lab</h3>
+          <div class="p-8 rounded-3xl glass-card border-white/5 flex flex-col">
+            <h5 class="text-xl font-bold mb-4">Enterprise</h5>
             <p class="text-4xl font-bold mb-6">Custom</p>
             <ul class="space-y-4 mb-8 flex-1 text-sm text-zinc-400">
               <li>
-                <i class="fas fa-check text-indigo-400 mr-2"></i> Bespoke Model
-                Training
+                <i class="fas fa-check text-indigo-400 mr-2"></i> Multi-facility
+                Support
               </li>
               <li>
-                <i class="fas fa-check text-indigo-400 mr-2"></i> Multi-region
-                compliance
+                <i class="fas fa-check text-indigo-400 mr-2"></i> Custom AI
+                Model Training
               </li>
               <li>
-                <i class="fas fa-check text-indigo-400 mr-2"></i> Dedicated
-                Server Nodes
+                <i class="fas fa-check text-indigo-400 mr-2"></i> On-premise
+                Deployment
+              </li>
+              <li>
+                <i class="fas fa-check text-indigo-400 mr-2"></i> Dedicated Care
+                Manager
               </li>
             </ul>
             <button
-              class="w-full py-3 rounded-full border border-white/10 hover:bg-white/5 transition-all font-bold text-sm"
+              class="w-full py-3 rounded-full border border-white/10 hover:bg-white/5 transition-colors font-bold text-sm"
             >
               Contact Sales
             </button>
@@ -504,186 +648,267 @@
         </div>
       </section>
 
-      <!-- ABOUT SECTION -->
-      <section id="about" class="px-6 max-w-7xl mx-auto">
-        <div class="grid md:grid-cols-2 gap-20 items-center">
-          <div>
-            <h2 class="text-5xl font-bold mb-8">Our Mission</h2>
-            <p class="text-zinc-400 text-lg leading-relaxed mb-6">
-              Founded in 2021, VitaCore AI was built on a simple premise:
-              medical professionals should spend more time with patients and
-              less time navigating data silos.
-            </p>
-            <p class="text-zinc-400 text-lg leading-relaxed">
-              Our team consists of MIT engineers, oncologists, and healthcare
-              policy experts working together to bridge the gap between
-              artificial intelligence and clinical practice.
+      <!-- Research/Benchmark Section -->
+      <section
+        id="research"
+        class="max-w-7xl mx-auto px-6 mb-32 py-16 bg-white/5 rounded-[3rem]"
+      >
+        <div class="text-center mb-16">
+          <h2 class="text-4xl font-bold mb-4">Backed by Research</h2>
+          <p class="text-zinc-400">
+            Our clinical models are validated through rigorous testing and
+            peer-reviewed studies.
+          </p>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div class="p-6">
+            <h6 class="text-4xl font-bold text-indigo-400 mb-2">99.8%</h6>
+            <p class="font-bold text-white mb-2">Diagnostic Accuracy</p>
+            <p class="text-zinc-500 text-sm">
+              Across 15+ specialty departments in clinical trials.
             </p>
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="p-6">
+            <h6 class="text-4xl font-bold text-indigo-400 mb-2">40%</h6>
+            <p class="font-bold text-white mb-2">Efficiency Increase</p>
+            <p class="text-zinc-500 text-sm">
+              Average reduction in patient wait times and administrative burden.
+            </p>
+          </div>
+          <div class="p-6">
+            <h6 class="text-4xl font-bold text-indigo-400 mb-2">2.5M+</h6>
+            <p class="font-bold text-white mb-2">Lives Impacted</p>
+            <p class="text-zinc-500 text-sm">
+              Patient cases analyzed globally using VitaCore algorithms.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Testimonials -->
+      <section class="max-w-7xl mx-auto px-6 mb-32">
+        <div class="grid md:grid-cols-2 gap-12 items-center">
+          <h2 class="text-4xl md:text-5xl font-bold leading-tight">
+            What Medical Professionals say
+          </h2>
+          <div class="space-y-6">
             <div
-              class="h-40 glass-card rounded-2xl flex flex-col items-center justify-center hover:border-indigo-500/30 transition-all"
+              class="p-6 glass-card rounded-2xl border-white/5 italic text-zinc-400"
             >
-              <span class="text-4xl font-bold text-indigo-400">40+</span>
-              <span class="text-xs text-zinc-500 mt-2 uppercase">Patents</span>
+              "VitaCore AI has fundamentally changed how we approach oncology
+              diagnostics. The precision is unmatched, allowing us to start
+              treatments weeks earlier."
+              <div class="not-italic mt-4 text-white font-bold text-sm">
+                — Dr. Sarah Chen, Oncology Lead
+              </div>
             </div>
             <div
-              class="h-40 glass-card rounded-2xl flex flex-col items-center justify-center hover:border-emerald-500/30 transition-all"
+              class="p-6 glass-card rounded-2xl border-white/5 italic text-zinc-400"
             >
-              <span class="text-4xl font-bold text-emerald-400">12k</span>
-              <span class="text-xs text-zinc-500 mt-2 uppercase">Clinics</span>
-            </div>
-            <div
-              class="h-40 glass-card rounded-2xl flex flex-col items-center justify-center hover:border-amber-500/30 transition-all"
-            >
-              <span class="text-4xl font-bold text-amber-400">99%</span>
-              <span class="text-xs text-zinc-500 mt-2 uppercase">Uptime</span>
-            </div>
-            <div
-              class="h-40 glass-card rounded-2xl flex flex-col items-center justify-center hover:border-red-500/30 transition-all"
-            >
-              <span class="text-4xl font-bold text-red-400">15m</span>
-              <span class="text-xs text-zinc-500 mt-2 uppercase"
-                >Lives Affected</span
-              >
+              "The integration was so smooth my staff didn't even notice. The
+              analytics dashboard is now our primary source of truth for
+              hospital operations."
+              <div class="not-italic mt-4 text-white font-bold text-sm">
+                — Marcus Vane, Hospital Administrator
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- CONTACT SECTION -->
-      <section id="contact" class="px-6 max-w-3xl mx-auto pb-32">
-        <div class="text-center mb-12">
-          <h2 class="text-4xl font-bold mb-4">Talk to an Expert</h2>
-          <p class="text-zinc-500">
-            Request a custom demo or inquire about enterprise pricing.
-          </p>
+      <!-- FAQ Section -->
+      <section id="faq" class="max-w-3xl mx-auto px-6 mb-32">
+        <div class="text-center mb-16">
+          <h2 class="text-4xl font-bold mb-4">Common Questions</h2>
         </div>
-        <form
-          class="space-y-6 glass-card p-10 rounded-3xl border border-white/10"
+        <div class="space-y-4">
+          <div
+            class="accordion-item glass-card border-white/5 rounded-2xl overflow-hidden"
+          >
+            <button
+              onclick="toggleAccordion(this)"
+              class="w-full p-6 text-left flex justify-between items-center font-bold"
+            >
+              Is VitaCore AI HIPAA compliant?
+              <i
+                class="fas fa-chevron-down accordion-icon transition-transform"
+              ></i>
+            </button>
+            <div class="accordion-content">
+              <div class="p-6 pt-0 text-zinc-400 text-sm">
+                Yes, VitaCore AI is fully HIPAA, GDPR, and SOC2 compliant. We
+                use enterprise-grade encryption for all data at rest and in
+                transit.
+              </div>
+            </div>
+          </div>
+          <div
+            class="accordion-item glass-card border-white/5 rounded-2xl overflow-hidden"
+          >
+            <button
+              onclick="toggleAccordion(this)"
+              class="w-full p-6 text-left flex justify-between items-center font-bold"
+            >
+              Does it integrate with Epic or Cerner?
+              <i
+                class="fas fa-chevron-down accordion-icon transition-transform"
+              ></i>
+            </button>
+            <div class="accordion-content">
+              <div class="p-6 pt-0 text-zinc-400 text-sm">
+                Absolutely. We support native integrations with major EMR
+                systems including Epic, Cerner, and AthenaHealth via HL7 and
+                FHIR standards.
+              </div>
+            </div>
+          </div>
+          <div
+            class="accordion-item glass-card border-white/5 rounded-2xl overflow-hidden"
+          >
+            <button
+              onclick="toggleAccordion(this)"
+              class="w-full p-6 text-left flex justify-between items-center font-bold"
+            >
+              How long does onboarding take?
+              <i
+                class="fas fa-chevron-down accordion-icon transition-transform"
+              ></i>
+            </button>
+            <div class="accordion-content">
+              <div class="p-6 pt-0 text-zinc-400 text-sm">
+                Standard clinic onboarding takes 7-10 business days. Large
+                hospital networks typically complete deployment within 4-6
+                weeks.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Final CTA Section -->
+      <section class="max-w-7xl mx-auto px-6 mb-32">
+        <div
+          class="p-16 rounded-[3rem] bg-indigo-600 text-center relative overflow-hidden"
         >
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <label
-                class="block text-xs font-bold text-zinc-500 uppercase mb-2"
-                >First Name</label
+          <div class="relative z-10">
+            <h2 class="text-4xl md:text-5xl font-bold mb-6">
+              Ready to transform your clinic?
+            </h2>
+            <p class="text-indigo-100 mb-10 max-w-xl mx-auto">
+              Join thousands of medical institutions leading the way in
+              AI-integrated healthcare.
+            </p>
+            <div class="flex flex-col sm:row items-center justify-center gap-4">
+              <button
+                class="bg-white text-black font-bold px-8 py-4 rounded-full text-lg shadow-xl"
               >
-              <input
-                type="text"
-                class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-all"
-              />
-            </div>
-            <div>
-              <label
-                class="block text-xs font-bold text-zinc-500 uppercase mb-2"
-                >Last Name</label
+                Get Started Now
+              </button>
+              <button
+                class="border border-white/30 text-white font-bold px-8 py-4 rounded-full text-lg"
               >
-              <input
-                type="text"
-                class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-all"
-              />
+                Talk to Sales
+              </button>
             </div>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-zinc-500 uppercase mb-2"
-              >Facility Type</label
-            >
-            <select
-              class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-all"
-            >
-              <option>Private Clinic</option>
-              <option>Public Hospital</option>
-              <option>Research University</option>
-              <option>Pharmaceutical Corp</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-zinc-500 uppercase mb-2"
-              >Message</label
-            >
-            <textarea
-              rows="4"
-              class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-all"
-            ></textarea>
-          </div>
-          <button
-            type="submit"
-            class="w-full bg-indigo-600 py-4 rounded-xl font-bold text-sm shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all"
-          >
-            Submit Inquiry
-          </button>
-        </form>
+          <div
+            class="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl rounded-full"
+          ></div>
+          <div
+            class="absolute bottom-0 left-0 w-64 h-64 bg-black/10 blur-3xl rounded-full"
+          ></div>
+        </div>
       </section>
-    </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-white/5 pt-20 pb-10 bg-zinc-950/50">
-      <div
-        class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12 mb-20"
-      >
-        <div class="col-span-2 lg:col-span-1">
-          <div class="flex items-center gap-2 font-bold text-lg mb-6">
-            <div
-              class="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center"
-            >
-              <i class="fas fa-heartbeat text-[10px]"></i>
+      <!-- Footer -->
+      <footer class="border-t border-white/5 pt-20 pb-10">
+        <div
+          class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12 mb-20"
+        >
+          <div class="col-span-2 lg:col-span-1">
+            <div class="flex items-center gap-2 font-bold text-lg mb-6">
+              <div
+                class="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center"
+              >
+                <i class="fas fa-heartbeat text-[10px]"></i>
+              </div>
+              <span>VitaCore AI</span>
             </div>
-            <span>VitaCore AI</span>
+            <p class="text-zinc-500 text-sm leading-relaxed mb-6">
+              Redefining healthcare through intelligent automation and
+              patient-centric care.
+            </p>
           </div>
-          <p class="text-zinc-500 text-sm leading-relaxed mb-6">
-            Building the future of modern medical technology.
-          </p>
+          <div>
+            <h5
+              class="font-bold text-sm mb-6 uppercase tracking-widest text-zinc-300"
+            >
+              Platform
+            </h5>
+            <ul class="space-y-4 text-zinc-500 text-sm">
+              <li>
+                <a href="#solutions" class="hover:text-white"
+                  >Clinical Modules</a
+                >
+              </li>
+              <li>
+                <a href="#features" class="hover:text-white">AI Diagnostics</a>
+              </li>
+              <li>
+                <a href="#diagnostics" class="hover:text-white">Workflow</a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h5
+              class="font-bold text-sm mb-6 uppercase tracking-widest text-zinc-300"
+            >
+              Resources
+            </h5>
+            <ul class="space-y-4 text-zinc-500 text-sm">
+              <li>
+                <a href="#research" class="hover:text-white">Research Data</a>
+              </li>
+              <li><a href="#faq" class="hover:text-white">FAQ</a></li>
+              <li><a href="#" class="hover:text-white">Documentation</a></li>
+            </ul>
+          </div>
+          <div>
+            <h5
+              class="font-bold text-sm mb-6 uppercase tracking-widest text-zinc-300"
+            >
+              Support
+            </h5>
+            <ul class="space-y-4 text-zinc-500 text-sm">
+              <li><a href="#" class="hover:text-white">Help Center</a></li>
+              <li><a href="#" class="hover:text-white">Compliance</a></li>
+              <li><a href="#" class="hover:text-white">API</a></li>
+            </ul>
+          </div>
         </div>
-        <div>
-          <h5
-            class="font-bold text-sm mb-6 uppercase tracking-widest text-zinc-300"
-          >
-            Platform
-          </h5>
-          <ul class="space-y-4 text-zinc-500 text-sm">
-            <li><a href="#solutions" class="hover:text-white">Solutions</a></li>
-            <li>
-              <a href="#diagnostics" class="hover:text-white">Diagnostics</a>
-            </li>
-            <li><a href="#research" class="hover:text-white">Research</a></li>
-          </ul>
+        <div
+          class="max-w-7xl mx-auto px-6 flex flex-col md:row items-center justify-between border-t border-white/5 pt-10 text-zinc-500 text-xs text-center"
+        >
+          <p>&copy; 2024 VitaCore AI. All rights reserved.</p>
         </div>
-        <div>
-          <h5
-            class="font-bold text-sm mb-6 uppercase tracking-widest text-zinc-300"
-          >
-            Company
-          </h5>
-          <ul class="space-y-4 text-zinc-500 text-sm">
-            <li><a href="#about" class="hover:text-white">About Us</a></li>
-            <li><a href="#contact" class="hover:text-white">Contact</a></li>
-          </ul>
-        </div>
-      </div>
-      <div
-        class="max-w-7xl mx-auto px-6 border-t border-white/5 pt-10 text-zinc-500 text-xs text-center md:text-left"
-      >
-        <p>&copy; 2024 VitaCore AI. All rights reserved.</p>
-      </div>
-    </footer>
+      </footer>
+    </div>
 
-    <!-- Sign In Modal -->
+    <!-- Sign In View (Modal) -->
     <div
-      id="signin-modal"
+      id="signin-view"
       class="view-hidden fixed inset-0 z-50 flex items-center justify-center p-6"
     >
-      <!-- Overlay -->
       <div
-        onclick="toggleModal('signin', false)"
+        onclick="toggleView('main')"
         class="absolute inset-0 bg-zinc-950/90 backdrop-blur-md cursor-pointer"
       ></div>
 
       <div
         class="relative w-full max-w-md p-8 glass-card rounded-3xl border border-white/10 shadow-2xl"
       >
-        <!-- Close button -->
         <button
-          onclick="toggleModal('signin', false)"
+          onclick="toggleView('main')"
           class="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors"
         >
           <i class="fas fa-times text-lg"></i>
@@ -700,49 +925,89 @@
           <span>VitaCore AI</span>
         </div>
 
-        <h2 class="text-2xl font-bold mb-2 text-center">Clinical Access</h2>
-        <p class="text-zinc-500 text-sm text-center mb-6">
-          Secure portal for medical staff.
+        <h2 class="text-2xl font-bold mb-2">Welcome back</h2>
+        <p class="text-zinc-400 text-sm mb-8">
+          Clinical credentials required for access.
         </p>
 
         <form id="signin-form" class="space-y-5">
-          <input
-            type="email"
-            required
-            placeholder="Email Address"
-            class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none"
-          />
-          <input
-            type="password"
-            required
-            placeholder="Access Token"
-            class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none"
-          />
+          <div>
+            <label class="block text-xs font-bold text-zinc-500 uppercase mb-2"
+              >Clinical Email</label
+            >
+            <input
+              type="email"
+              required
+              placeholder="dr.smith@hospital.com"
+              class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-zinc-500 uppercase mb-2"
+              >Access Token</label
+            >
+            <input
+              type="password"
+              required
+              placeholder="••••••••"
+              class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition-all"
+            />
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" class="accent-indigo-500" />
+              <span class="text-zinc-400">Remember session</span>
+            </label>
+            <a href="#" class="text-indigo-400 hover:text-indigo-300"
+              >Forgot access?</a
+            >
+          </div>
           <button
             type="submit"
-            class="w-full bg-white text-black font-bold py-3.5 rounded-xl hover:bg-zinc-200 transition-all text-sm"
+            class="w-full bg-white text-black font-bold py-3.5 rounded-xl hover:bg-zinc-200 transition-all text-sm mt-4"
           >
             Authenticate
           </button>
         </form>
+
+        <p class="text-center text-zinc-500 text-xs mt-8">
+          New facility?
+          <a href="#" class="text-white font-medium hover:underline"
+            >Request onboarding</a
+          >
+        </p>
       </div>
     </div>
 
     <script>
-      // MODAL TOGGLE
-      function toggleModal(modalId, show) {
-        const modal = document.getElementById(modalId + "-modal");
+      function toggleView(view) {
+        const signin = document.getElementById("signin-view");
         const body = document.body;
-        if (show) {
-          modal.classList.remove("view-hidden");
+
+        if (view === "signin") {
+          signin.classList.remove("view-hidden");
           body.style.overflow = "hidden";
         } else {
-          modal.classList.add("view-hidden");
+          signin.classList.add("view-hidden");
           body.style.overflow = "auto";
         }
       }
 
-      // SIGN IN MOCK LOGIC
+      function toggleAccordion(btn) {
+        const item = btn.parentElement;
+        const isActive = item.classList.contains("active");
+
+        // Close all
+        document
+          .querySelectorAll(".accordion-item")
+          .forEach((i) => i.classList.remove("active"));
+
+        // Toggle current
+        if (!isActive) {
+          item.classList.add("active");
+        }
+      }
+
       document.getElementById("signin-form").addEventListener("submit", (e) => {
         e.preventDefault();
         const btn = e.target.querySelector("button");
@@ -753,41 +1018,42 @@
         btn.disabled = true;
 
         setTimeout(() => {
-          btn.innerHTML = '<i class="fas fa-check"></i> Authorized';
+          btn.innerHTML = '<i class="fas fa-check"></i> Success';
           btn.classList.add("bg-emerald-500", "text-white");
 
           setTimeout(() => {
-            toggleModal("signin", false);
+            toggleView("main");
             btn.innerText = originalText;
             btn.disabled = false;
             btn.classList.remove("bg-emerald-500", "text-white");
-          }, 1000);
+          }, 800);
         }, 1500);
       });
 
-      // Intersection Observer for highlighting nav links or scroll animations
       document.addEventListener("DOMContentLoaded", () => {
-        const observerOptions = { threshold: 0.2 };
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("opacity-100", "translate-y-0");
-            }
-          });
-        }, observerOptions);
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("opacity-100", "translate-y-0");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.1 }
+        );
 
-        document.querySelectorAll("section").forEach((section) => {
-          // Apply a slight fade-in animation to sections as they enter view
-          if (section.id !== "home" && section.id !== "dashboard") {
-            section.classList.add(
+        document
+          .querySelectorAll(".glass-card, header, #research div, #pricing div")
+          .forEach((card) => {
+            card.classList.add(
               "opacity-0",
-              "translate-y-8",
+              "translate-y-10",
               "transition-all",
-              "duration-1000"
+              "duration-700"
             );
-            observer.observe(section);
-          }
-        });
+            observer.observe(card);
+          });
       });
     </script>
   </body>
