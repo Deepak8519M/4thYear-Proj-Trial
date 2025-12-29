@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VitaCore - Future of Healthcare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+      :root {
+        --primary: #2563eb;
+        --secondary: #1e293b;
+        --bg-light: #f8fafc;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: var(--bg-light);
+        color: #1e293b;
+        overflow-x: hidden;
+      }
+
+      .custom-shadow {
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
+          0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      }
+
+      .status-badge {
+        padding: 2px 10px;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .sidebar-item {
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .sidebar-item.active {
+        background-color: #1e293b;
+        color: white;
+      }
+
+      .card-hover:hover {
+        transform: translateY(-5px);
+        transition: all 0.3s ease;
+      }
+
+      .screen {
+        display: none;
+      }
+
+      .screen.active {
+        display: block;
+      }
+
+      .view-section {
+        display: none;
+      }
+
+      .view-section.active {
+        display: block;
+      }
+
+      /* Glassmorphism */
+      .glass {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SCREEN: LANDING PAGE -->
+    <div id="screen-landing" class="screen active">
+      <!-- Navbar -->
+      <nav class="fixed w-full z-50 glass border-b border-slate-100">
+        <div
+          class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between"
+        >
+          <div class="flex items-center gap-2">
+            <div
+              class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200"
+            >
+              <i class="fas fa-plus text-white"></i>
+            </div>
+            <span class="font-bold text-2xl tracking-tight"
+              >Vita<span class="text-blue-600">Core</span></span
+            >
+          </div>
+          <div class="hidden md:flex items-center gap-8 text-sm font-semibold">
+            <a href="#features" class="hover:text-blue-600 transition-colors"
+              >Features</a
+            >
+            <a href="#about" class="hover:text-blue-600 transition-colors"
+              >About Us</a
+            >
+            <a href="#contact" class="hover:text-blue-600 transition-colors"
+              >Contact</a
+            >
+          </div>
+          <div class="flex items-center gap-4">
+            <button
+              onclick="switchScreen('login')"
+              class="text-sm font-bold text-slate-600 hover:text-blue-600"
+            >
+              Log In
+            </button>
+            <button
+              onclick="switchScreen('signup')"
+              class="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all"
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Hero Section -->
+      <section class="pt-40 pb-20 px-6">
+        <div
+          class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+        >
+          <div class="space-y-8">
+            <div
+              class="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest"
+            >
+              <i class="fas fa-sparkles"></i>
+              Healthcare Reimagined
+            </div>
+            <h1 class="text-5xl lg:text-7xl font-bold leading-tight">
+              Better Data, <br /><span class="text-blue-600">Better Care.</span>
+            </h1>
+            <p class="text-slate-500 text-lg max-w-lg">
+              VitaCore provides a seamless digital ecosystem for medical
+              professionals and patients to collaborate for a healthier
+              tomorrow.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4">
+              <button
+                onclick="switchScreen('signup')"
+                class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-200"
+              >
+                Start Your Journey
+              </button>
+              <div class="flex items-center gap-4 px-4">
+                <div class="flex -space-x-3">
+                  <img
+                    class="w-10 h-10 rounded-full border-4 border-white"
+                    src="https://i.pravatar.cc/100?u=1"
+                    alt=""
+                  />
+                  <img
+                    class="w-10 h-10 rounded-full border-4 border-white"
+                    src="https://i.pravatar.cc/100?u=2"
+                    alt=""
+                  />
+                  <img
+                    class="w-10 h-10 rounded-full border-4 border-white"
+                    src="https://i.pravatar.cc/100?u=3"
+                    alt=""
+                  />
+                </div>
+                <div class="text-sm">
+                  <p class="font-bold">2,000+ Doctors</p>
+                  <p class="text-slate-400">Trust VitaCore daily</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="relative">
+            <div
+              class="bg-blue-600 w-full aspect-square rounded-[3rem] overflow-hidden shadow-2xl relative"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1576091160550-2173dad99968?w=800&auto=format&fit=crop"
+                class="w-full h-full object-cover opacity-80"
+                alt="Medical Technology"
+              />
+              <div
+                class="absolute bottom-8 left-8 right-8 glass p-6 rounded-3xl shadow-lg border border-white/20"
+              >
+                <div class="flex justify-between items-center mb-4">
+                  <p class="font-bold">Real-time Patient Flow</p>
+                  <span
+                    class="bg-green-500 w-2 h-2 rounded-full animate-pulse"
+                  ></span>
+                </div>
+                <div
+                  class="w-full bg-slate-200 h-2 rounded-full overflow-hidden"
+                >
+                  <div class="bg-blue-600 h-full w-[84%]"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Decor -->
+            <div
+              class="absolute -top-10 -right-10 w-32 h-32 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"
+            ></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Feature Cards (Reused Design) -->
+      <section id="features" class="py-20 bg-slate-50 px-6">
+        <div class="max-w-7xl mx-auto">
+          <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold mb-4">Integrated Solutions</h2>
+            <p class="text-slate-500">
+              Powerful tools designed specifically for the medical ecosystem.
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div
+              class="bg-white p-8 rounded-[2.5rem] card-hover shadow-sm border border-slate-100"
+            >
+              <div
+                class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6"
+              >
+                <i class="fas fa-heartbeat text-2xl"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3">Remote Monitoring</h3>
+              <p class="text-slate-500 text-sm leading-relaxed">
+                Connected diagnostics that sync patient data directly to the
+                clinical dashboard instantly.
+              </p>
+            </div>
+            <div
+              class="bg-white p-8 rounded-[2.5rem] card-hover shadow-sm border border-slate-100"
+            >
+              <div
+                class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6"
+              >
+                <i class="fas fa-shield-alt text-2xl"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3">Secure Records</h3>
+              <p class="text-slate-500 text-sm leading-relaxed">
+                HIPAA-compliant cloud storage with end-to-end encryption for
+                every patient file.
+              </p>
+            </div>
+            <div
+              class="bg-white p-8 rounded-[2.5rem] card-hover shadow-sm border border-slate-100"
+            >
+              <div
+                class="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center mb-6"
+              >
+                <i class="fas fa-brain text-2xl"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3">AI Diagnostics</h3>
+              <p class="text-slate-500 text-sm leading-relaxed">
+                Advanced machine learning patterns that assist in early
+                detection and predictive care.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- SCREEN: AUTH (Login/Signup) -->
+    <div
+      id="screen-auth"
+      class="screen min-h-screen bg-white flex items-center justify-center p-6"
+    >
+      <div class="max-w-md w-full space-y-8">
+        <div class="text-center">
+          <div
+            onclick="switchScreen('landing')"
+            class="flex items-center justify-center gap-2 cursor-pointer mb-8"
+          >
+            <div
+              class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200"
+            >
+              <i class="fas fa-plus text-white"></i>
+            </div>
+            <span class="font-bold text-2xl tracking-tight"
+              >Vita<span class="text-blue-600">Core</span></span
+            >
+          </div>
+          <h2 id="auth-title" class="text-3xl font-bold">Welcome Back</h2>
+          <p id="auth-subtitle" class="text-slate-500 text-sm mt-2">
+            Enter your credentials to access your account
+          </p>
+        </div>
+
+        <form id="auth-form" class="space-y-4" onsubmit="handleAuth(event)">
+          <div id="signup-fields" class="hidden space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-400 uppercase"
+                  >First Name</label
+                >
+                <input
+                  type="text"
+                  class="w-full px-4 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-100 transition-all text-sm"
+                  placeholder="John"
+                />
+              </div>
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-400 uppercase"
+                  >Last Name</label
+                >
+                <input
+                  type="text"
+                  class="w-full px-4 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-100 transition-all text-sm"
+                  placeholder="Doe"
+                />
+              </div>
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-400 uppercase"
+                >Role Select</label
+              >
+              <select
+                id="role-select"
+                onchange="toggleAdminField()"
+                class="w-full px-4 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-100 transition-all text-sm"
+              >
+                <option value="patient">Patient / Customer</option>
+                <option value="admin">Admin / Medical Staff</option>
+              </select>
+            </div>
+            <div id="admin-token-field" class="hidden space-y-1">
+              <label class="text-xs font-bold text-red-400 uppercase"
+                >Secret Admin Token</label
+              >
+              <input
+                type="password"
+                id="admin-token"
+                class="w-full px-4 py-3 rounded-xl bg-red-50 border border-red-100 outline-none focus:ring-2 focus:ring-red-200 transition-all text-sm placeholder:text-red-300"
+                placeholder="Enter security key"
+              />
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-400 uppercase"
+              >Email Address</label
+            >
+            <input
+              type="email"
+              id="auth-email"
+              required
+              class="w-full px-4 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-100 transition-all text-sm"
+              placeholder="name@company.com"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-400 uppercase"
+              >Password</label
+            >
+            <input
+              type="password"
+              id="auth-pass"
+              required
+              class="w-full px-4 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-100 transition-all text-sm"
+              placeholder="••••••••"
+            />
+          </div>
+
+          <div
+            id="auth-error"
+            class="hidden p-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100 flex items-center gap-2"
+          >
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="error-message">Error message here</span>
+          </div>
+
+          <button
+            type="submit"
+            id="auth-submit-btn"
+            class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-100"
+          >
+            Sign In
+          </button>
+        </form>
+
+        <div class="text-center text-sm">
+          <p id="auth-toggle-text">
+            Don't have an account?
+            <a
+              href="javascript:void(0)"
+              onclick="toggleAuthMode()"
+              class="text-blue-600 font-bold hover:underline"
+              >Create an account</a
+            >
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN: ADMIN DASHBOARD (The Private UI) -->
+    <div id="screen-dashboard" class="screen h-screen overflow-hidden">
+      <div class="flex h-full">
+        <!-- Sidebar -->
+        <aside
+          class="w-64 border-r border-slate-200 bg-white flex flex-col hidden lg:flex"
+        >
+          <div class="p-6">
+            <div class="flex items-center gap-2 mb-8">
+              <div
+                class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center"
+              >
+                <i class="fas fa-plus text-white text-sm"></i>
+              </div>
+              <span class="font-bold text-xl tracking-tight"
+                >Vita<span class="text-blue-600">Core</span></span
+              >
+            </div>
+
+            <nav class="space-y-1">
+              <p
+                class="text-[10px] font-bold text-slate-400 uppercase tracking-[2px] mb-4 px-3"
+              >
+                Management
+              </p>
+              <div
+                onclick="switchView('overview')"
+                id="nav-overview"
+                class="sidebar-item active flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold"
+              >
+                <i class="fas fa-th-large text-lg"></i> Overview
+              </div>
+              <div
+                onclick="switchView('patients')"
+                id="nav-patients"
+                class="sidebar-item flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-400"
+              >
+                <i class="fas fa-user-injured text-lg"></i> Patients
+              </div>
+              <div
+                onclick="switchView('appointments')"
+                id="nav-appointments"
+                class="sidebar-item flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-400"
+              >
+                <i class="fas fa-calendar-alt text-lg"></i> Appointments
+              </div>
+              <div
+                onclick="switchView('diagnostics')"
+                id="nav-diagnostics"
+                class="sidebar-item flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-400"
+              >
+                <i class="fas fa-microscope text-lg"></i> Diagnostics
+              </div>
+              <div
+                onclick="switchView('billing')"
+                id="nav-billing"
+                class="sidebar-item flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-400"
+              >
+                <i class="fas fa-wallet text-lg"></i> Billing
+              </div>
+            </nav>
+          </div>
+          <div class="mt-auto p-6 border-t border-slate-100">
+            <button
+              onclick="handleLogout()"
+              class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all"
+            >
+              <i class="fas fa-sign-out-alt"></i> Sign Out
+            </button>
+          </div>
+        </aside>
+
+        <!-- Content -->
+        <main class="flex-1 flex flex-col bg-[#F8FAFC] overflow-y-auto">
+          <header
+            class="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-20"
+          >
+            <div>
+              <h1 id="header-title" class="text-xl font-bold">
+                Clinical Overview
+              </h1>
+              <p id="header-subtitle" class="text-slate-400 text-xs">
+                Welcome back, Dr. Sarah Johnson
+              </p>
+            </div>
+            <div class="flex items-center gap-4">
+              <div
+                class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100"
+              >
+                <i class="far fa-bell"></i>
+              </div>
+              <div
+                class="flex items-center gap-3 bg-white p-1 pr-3 rounded-xl border border-slate-100 shadow-sm"
+              >
+                <img
+                  src="https://i.pravatar.cc/100?u=sarah"
+                  class="w-8 h-8 rounded-lg"
+                  alt=""
+                />
+                <div class="hidden sm:block">
+                  <p class="text-xs font-bold leading-none">
+                    Dr. Sarah Johnson
+                  </p>
+                  <p class="text-[10px] text-slate-400">Administrator</p>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <div class="p-8">
+            <!-- Dashboard views integrated from existing code -->
+            <div id="view-overview" class="view-section active space-y-8">
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div
+                  class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 card-hover"
+                >
+                  <div class="flex justify-between items-start mb-4">
+                    <div
+                      class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center"
+                    >
+                      <i class="fas fa-users"></i>
+                    </div>
+                    <span
+                      class="text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded-lg"
+                      >+2.5%</span
+                    >
+                  </div>
+                  <p
+                    class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1"
+                  >
+                    Active Patients
+                  </p>
+                  <h3 class="text-2xl font-bold">1,482</h3>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 card-hover"
+                >
+                  <div class="flex justify-between items-start mb-4">
+                    <div
+                      class="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center"
+                    >
+                      <i class="fas fa-clock"></i>
+                    </div>
+                    <span
+                      class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-lg"
+                      >-1.2%</span
+                    >
+                  </div>
+                  <p
+                    class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1"
+                  >
+                    Consultation Time
+                  </p>
+                  <h3 class="text-2xl font-bold">18m 20s</h3>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 card-hover"
+                >
+                  <div class="flex justify-between items-start mb-4">
+                    <div
+                      class="w-12 h-12 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center"
+                    >
+                      <i class="fas fa-star"></i>
+                    </div>
+                    <span
+                      class="text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded-lg"
+                      >High</span
+                    >
+                  </div>
+                  <p
+                    class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1"
+                  >
+                    Patient Rating
+                  </p>
+                  <h3 class="text-2xl font-bold">4.9/5.0</h3>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 card-hover"
+                >
+                  <div class="flex justify-between items-start mb-4">
+                    <div
+                      class="w-12 h-12 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center"
+                    >
+                      <i class="fas fa-bed"></i>
+                    </div>
+                    <span
+                      class="text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded-lg"
+                      >94%</span
+                    >
+                  </div>
+                  <p
+                    class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1"
+                  >
+                    Bed Capacity
+                  </p>
+                  <h3 class="text-2xl font-bold">384/400</h3>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div
+                  class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm"
+                >
+                  <h2 class="text-lg font-bold mb-8">Admission Trends</h2>
+                  <div class="h-80 w-full">
+                    <canvas id="adminChart"></canvas>
+                  </div>
+                </div>
+                <div
+                  class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm"
+                >
+                  <h2 class="text-lg font-bold mb-8">Patient Sources</h2>
+                  <div class="space-y-6" id="referral-list-admin"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Other views placeholders for logic -->
+            <div id="view-patients" class="view-section space-y-8">
+              <div
+                class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm"
+              >
+                <h2 class="text-lg font-bold mb-8">Patient Registry</h2>
+                <div id="patient-table-admin"></div>
+              </div>
+            </div>
+
+            <div id="view-appointments" class="view-section space-y-8">
+              <div
+                class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm text-center py-20"
+              >
+                <i class="fas fa-calendar-day text-5xl text-slate-100 mb-6"></i>
+                <h2 class="text-xl font-bold">Today's Schedule</h2>
+                <p class="text-slate-400 max-w-xs mx-auto mt-2">
+                  All appointment modules are fully operational in
+                  administrative mode.
+                </p>
+              </div>
+            </div>
+
+            <div id="view-diagnostics" class="view-section space-y-8">
+              <div
+                class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm"
+              >
+                <h2 class="text-lg font-bold mb-8">Lab Upload Manager</h2>
+                <p class="text-slate-500">
+                  Secure diagnostic result portal is active.
+                </p>
+              </div>
+            </div>
+
+            <div id="view-billing" class="view-section space-y-8">
+              <div
+                class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm"
+              >
+                <h2 class="text-lg font-bold mb-8">Revenue Management</h2>
+                <p class="text-slate-500">
+                  Financial auditing system for Q4 active.
+                </p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      // APP STATE
+      let isLoginMode = true;
+      let currentUser = null;
+      const ADMIN_SECRET = "VITACARE-ADMIN-2025";
+
+      // SCREEN LOGIC
+      function switchScreen(screenId) {
+        let effectiveId = screenId;
+
+        // Map virtual screens to the real Auth screen
+        if (screenId === "login" || screenId === "signup") {
+          isLoginMode = screenId === "login";
+          effectiveId = "auth";
+        }
+
+        const target = document.getElementById("screen-" + effectiveId);
+        if (!target) return; // Guard against null properties error
+
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.remove("active"));
+        target.classList.add("active");
+
+        if (effectiveId === "auth") {
+          syncAuthUI(); // Ensure text matches current mode
+          document.getElementById("auth-error").classList.add("hidden");
+          toggleAdminField();
+        }
+        if (effectiveId === "dashboard") {
+          initCharts();
+          populateDashboardData();
+        }
+      }
+
+      // AUTH UI SYNC
+      function syncAuthUI() {
+        const title = document.getElementById("auth-title");
+        const sub = document.getElementById("auth-subtitle");
+        const submitBtn = document.getElementById("auth-submit-btn");
+        const toggleText = document.getElementById("auth-toggle-text");
+        const signupFields = document.getElementById("signup-fields");
+
+        if (isLoginMode) {
+          title.innerText = "Welcome Back";
+          sub.innerText = "Enter your credentials to access your account";
+          submitBtn.innerText = "Sign In";
+          toggleText.innerHTML = `Don't have an account? <a href="javascript:void(0)" onclick="toggleAuthMode()" class="text-blue-600 font-bold hover:underline">Create an account</a>`;
+          signupFields.classList.add("hidden");
+        } else {
+          title.innerText = "Create Account";
+          sub.innerText = "Join the VitaCore healthcare network";
+          submitBtn.innerText = "Sign Up";
+          toggleText.innerHTML = `Already have an account? <a href="javascript:void(0)" onclick="toggleAuthMode()" class="text-blue-600 font-bold hover:underline">Log in instead</a>`;
+          signupFields.classList.remove("hidden");
+        }
+      }
+
+      function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        syncAuthUI();
+        toggleAdminField();
+      }
+
+      function toggleAdminField() {
+        const roleSelect = document.getElementById("role-select");
+        if (!roleSelect) return;
+
+        const role = roleSelect.value;
+        const adminField = document.getElementById("admin-token-field");
+        if (role === "admin" && !isLoginMode) {
+          adminField.classList.remove("hidden");
+        } else {
+          adminField.classList.add("hidden");
+        }
+      }
+
+      function handleAuth(e) {
+        e.preventDefault();
+        const email = document.getElementById("auth-email").value;
+        const pass = document.getElementById("auth-pass").value;
+        const errorBox = document.getElementById("auth-error");
+
+        errorBox.classList.add("hidden");
+
+        if (isLoginMode) {
+          if (email === "admin@vitacore.com") {
+            currentUser = { email, role: "admin", name: "Dr. Sarah Johnson" };
+            switchScreen("dashboard");
+          } else if (email.includes("@")) {
+            currentUser = { email, role: "patient", name: "Verified Patient" };
+            switchScreen("landing");
+            alert(
+              "Welcome back! Patients have limited access to the portal features currently."
+            );
+          } else {
+            showError("Invalid email or password.");
+          }
+        } else {
+          const role = document.getElementById("role-select").value;
+          if (role === "admin") {
+            const token = document.getElementById("admin-token").value;
+            if (token !== ADMIN_SECRET) {
+              showError("Security violation: Invalid Admin Token.");
+              return;
+            }
+            currentUser = {
+              email,
+              role: "admin",
+              name: "Medical Professional",
+            };
+            switchScreen("dashboard");
+          } else {
+            currentUser = { email, role: "patient", name: "New Patient" };
+            switchScreen("landing");
+            alert("Patient registration successful!");
+          }
+        }
+      }
+
+      function showError(msg) {
+        const errorBox = document.getElementById("auth-error");
+        const errorMsg = document.getElementById("error-message");
+        errorBox.classList.remove("hidden");
+        errorMsg.innerText = msg;
+      }
+
+      function handleLogout() {
+        currentUser = null;
+        switchScreen("landing");
+      }
+
+      // VIEW NAVIGATION (Inside Dashboard)
+      function switchView(viewId) {
+        document
+          .querySelectorAll(".view-section")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById("view-" + viewId).classList.add("active");
+
+        document.querySelectorAll(".sidebar-item").forEach((item) => {
+          item.classList.remove("active", "text-slate-900");
+          item.classList.add("text-slate-400");
+        });
+        const activeNav = document.getElementById("nav-" + viewId);
+        activeNav.classList.add("active", "text-slate-900");
+        activeNav.classList.remove("text-slate-400");
+
+        const headers = {
+          overview: {
+            t: "Clinical Overview",
+            s: "Welcome back, Dr. Sarah Johnson",
+          },
+          patients: {
+            t: "Patient Registry",
+            s: "Complete medical records database",
+          },
+          appointments: {
+            t: "Daily Schedule",
+            s: "Track current and upcoming sessions",
+          },
+          diagnostics: {
+            t: "Diagnostics Hub",
+            s: "Manage medical reports and imaging",
+          },
+          billing: {
+            t: "Revenue & Billing",
+            s: "Financial overview of clinical services",
+          },
+        };
+        document.getElementById("header-title").innerText = headers[viewId].t;
+        document.getElementById("header-subtitle").innerText =
+          headers[viewId].s;
+      }
+
+      // DASHBOARD DATA POPULATION
+      function populateDashboardData() {
+        const listEl = document.getElementById("referral-list-admin");
+        if (!listEl) return;
+
+        const referrals = [
+          {
+            i: "fa-user-md",
+            l: "GP Referrals",
+            val: "842",
+            color: "blue",
+            c: "+12%",
+          },
+          {
+            i: "fa-ambulance",
+            l: "Emergency",
+            val: "214",
+            color: "red",
+            c: "+5%",
+          },
+          {
+            i: "fa-search",
+            l: "Organic",
+            val: "432",
+            color: "purple",
+            c: "+8%",
+          },
+        ];
+        listEl.innerHTML = referrals
+          .map(
+            (r) => `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-${r.color}-50 text-${r.color}-600 rounded-xl flex items-center justify-center"><i class="fas ${r.i}"></i></div>
+                        <div><p class="text-sm font-bold">${r.l}</p><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Source</p></div>
+                    </div>
+                    <div class="text-right"><p class="text-sm font-bold">${r.val}</p><p class="text-xs text-green-500 font-bold">${r.c}</p></div>
+                </div>
+            `
+          )
+          .join("");
+
+        const tableEl = document.getElementById("patient-table-admin");
+        if (!tableEl) return;
+
+        const patients = [
+          { n: "Esther Howard", id: "VC-014", st: "Stable", r: "402" },
+          { n: "Robert Williams", id: "VC-082", st: "Critical", r: "ICU-1" },
+          { n: "Jerome Bell", id: "VC-112", st: "Follow-up", r: "212" },
+        ];
+        tableEl.innerHTML = `
+                <table class="w-full text-left text-sm">
+                    <thead><tr class="text-slate-400 font-bold uppercase text-[10px] tracking-widest border-b border-slate-50"><th class="pb-4">Name</th><th class="pb-4">Status</th><th class="pb-4">Room</th></tr></thead>
+                    <tbody class="divide-y divide-slate-50">${patients
+                      .map(
+                        (p) => `
+                        <tr>
+                            <td class="py-4 font-bold">${
+                              p.n
+                            }<br><span class="text-[10px] text-slate-400 font-normal">${
+                          p.id
+                        }</span></td>
+                            <td class="py-4"><span class="status-badge ${
+                              p.st === "Critical"
+                                ? "bg-red-50 text-red-500"
+                                : "bg-green-50 text-green-500"
+                            }">${p.st}</span></td>
+                            <td class="py-4 font-bold text-slate-500">${
+                              p.r
+                            }</td>
+                        </tr>`
+                      )
+                      .join("")}
+                    </tbody>
+                </table>`;
+      }
+
+      // CHARTS
+      let myChart = null;
+      function initCharts() {
+        const chartEl = document.getElementById("adminChart");
+        if (!chartEl) return;
+        const ctx = chartEl.getContext("2d");
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: [
+              "Jan",
+              "Feb",
+              "Mar",
+              "Apr",
+              "May",
+              "Jun",
+              "Jul",
+              "Aug",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Dec",
+            ],
+            datasets: [
+              {
+                label: "Patient Admissions",
+                data: [
+                  1200, 1500, 1400, 1800, 1700, 2200, 2100, 2400, 2800, 2500,
+                  3000, 3200,
+                ],
+                borderColor: "#2563EB",
+                backgroundColor: "rgba(37, 99, 235, 0.05)",
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 0,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: "#f1f5f9" },
+                ticks: { font: { family: "Poppins" } },
+              },
+              x: {
+                grid: { display: false },
+                ticks: { font: { family: "Poppins" } },
+              },
+            },
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
