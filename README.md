@@ -1,6 +1,4 @@
-Great idea 👍 This is a **serious, real-world healthcare platform**, so I’ll give you a **clean, scalable, industry-style folder structure** that can grow to **10–15+ features** without becoming messy.
 
-I’ll assume a **modern full-stack setup**:
 
 * Frontend: React / Next.js
 * Backend: Node.js (Express / Nest) or Python (FastAPI)
