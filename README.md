@@ -1,11 +1,6 @@
 
 
-* Frontend: React / Next.js
-* Backend: Node.js (Express / Nest) or Python (FastAPI)
-* ML services separated (very important)
-* Role-based system (Admin / Doctor / Patient)
 
-You can adapt this easily later.
 
 ---
 
